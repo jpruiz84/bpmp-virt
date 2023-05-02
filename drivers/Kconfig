@@ -1,0 +1,7 @@
+append_menu "Device Drivers"
+
+if ARCH_TEGRA
+source "drivers/bpmp-host-proxy/Kconfig"
+endif
+
+endmenu
