@@ -36,6 +36,17 @@ MODULE_VERSION("0.1");
 #define MESSAGE_SIZE   0x0200
 
 
+#define BPMP_GUEST_VERBOSE    0
+
+#if BPMP_GUEST_VERBOSE
+#define deb_info(...)     printk(KERN_INFO DEVICE_NAME ": "__VA_ARGS__)
+#else
+#define deb_info(...)
+#endif
+
+#define deb_error(...)    printk(KERN_ALERT DEVICE_NAME ": "__VA_ARGS__)
+
+
 static volatile void __iomem  *mem_iova = NULL;
 
 extern int tegra_bpmp_transfer(struct tegra_bpmp *, struct tegra_bpmp_message *);
@@ -77,7 +88,7 @@ static struct file_operations fops =
 };
 
 
-#ifdef BPMP_GUEST_VERBOSE
+#if BPMP_GUEST_VERBOSE
 // Usage:
 //     hexDump(desc, addr, len, perLine);
 //         desc:    if non-NULL, printed as a description before hex dump.
@@ -175,32 +186,32 @@ int tegra_bpmp_guest_init(void)
 {
 
 	
-	printk(KERN_INFO "bpmp-guest: installing module.\n");
+	deb_info("%s, installing module.", __func__);
 
-	printk(KERN_INFO "bpmp-guest: bpmp_vpa: 0x%llX", bpmp_vpa);
+	deb_info("bpmp_vpa: 0x%llX", bpmp_vpa);
 
 	if(!bpmp_vpa){
-		printk(KERN_ALERT "bpmp-guest: Failed, bpmp_vpa not defined\n");
+		deb_error("Failed, bpmp_vpa not defined\n");
 	}
 
 	// Allocate a major number for the device.
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
 	if (major_number < 0)
 	{
-		printk(KERN_ALERT "bpmp-guest: could not register number.\n");
+		deb_error("could not register number.\n");
 		return major_number;
 	}
-	printk(KERN_INFO "bpmp-guest: registered correctly with major number %d\n", major_number);
+	deb_info("registered correctly with major number %d\n", major_number);
 
 	// Register the device class
 	bpmp_guest_proxy_class = class_create(THIS_MODULE, CLASS_NAME);
 	if (IS_ERR(bpmp_guest_proxy_class))
 	{ // Check for error and clean up if there is
 		unregister_chrdev(major_number, DEVICE_NAME);
-		printk(KERN_ALERT "Failed to register device class\n");
+		deb_error("Failed to register device class\n");
 		return PTR_ERR(bpmp_guest_proxy_class); // Correct way to return an error on a pointer
 	}
-	printk(KERN_INFO "bpmp-guest:: device class registered correctly\n");
+	deb_info("device class registered correctly\n");
 
 	// Register the device driver
 	bpmp_guest_proxy_device = device_create(bpmp_guest_proxy_class, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
@@ -208,20 +219,20 @@ int tegra_bpmp_guest_init(void)
 	{								 // Clean up if there is an error
 		class_destroy(bpmp_guest_proxy_class); 
 		unregister_chrdev(major_number, DEVICE_NAME);
-		printk(KERN_ALERT "Failed to create the device\n");
+		deb_error("Failed to create the device\n");
 		return PTR_ERR(bpmp_guest_proxy_device);
 	}
-	printk(KERN_INFO "bpmp-guest: device class created correctly\n"); // Made it! device was initialized
+	deb_info("device class created correctly\n"); // Made it! device was initialized
 
 	// map iomem
 	mem_iova = ioremap(bpmp_vpa, MEM_SIZE);
 
 	if (!mem_iova) {
-        printk(KERN_ERR "bpmp-guest: ioremap failed\n");
+        deb_error("ioremap failed\n");
         return -ENOMEM;
     }
 
-	printk(KERN_INFO "bpmp-guest: bpmp_vpa: 0x%llX, mem_iova: %p\n", bpmp_vpa, mem_iova);
+	deb_info("bpmp_vpa: 0x%llX, mem_iova: %p\n", bpmp_vpa, mem_iova);
 
 	tegra_bpmp_transfer_redirect = my_tegra_bpmp_transfer; // Hook func
 
@@ -237,7 +248,7 @@ EXPORT_SYMBOL(tegra_bpmp_guest_init);
  */
 void tegra_bpmp_guest_cleanup(void)
 {
-	printk(KERN_INFO "bpmp-guest: removing module.\n");
+	deb_info("removing module.\n");
 
 	// unmap iomem
 	iounmap((void __iomem*)bpmp_vpa);
@@ -247,7 +258,7 @@ void tegra_bpmp_guest_cleanup(void)
 	class_unregister(bpmp_guest_proxy_class);						  // unregister the device class
 	class_destroy(bpmp_guest_proxy_class);						  // remove the device class
 	unregister_chrdev(major_number, DEVICE_NAME);		  // unregister the major number
-	printk(KERN_INFO "bpmp-guest: Goodbye from the LKM!\n");
+	deb_info("Goodbye from the LKM!\n");
 	unregister_chrdev(major_number, DEVICE_NAME);
 	return;
 }
@@ -257,7 +268,7 @@ void tegra_bpmp_guest_cleanup(void)
  */
 static int open(struct inode *inodep, struct file *filep)
 {
-	printk(KERN_INFO "bpmp-guest: device opened.\n");
+	deb_info("device opened.\n");
     tegra_bpmp_outloud = 1;
 	return 0;
 }
@@ -267,7 +278,7 @@ static int open(struct inode *inodep, struct file *filep)
  */
 static int close(struct inode *inodep, struct file *filep)
 {
-	printk(KERN_INFO "bpmp-guest: device closed.\n");
+	deb_info("device closed.\n");
     tegra_bpmp_outloud = 0;
 	return 0;
 }
@@ -277,7 +288,7 @@ static int close(struct inode *inodep, struct file *filep)
  */
 static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset)
 {
-	printk(KERN_INFO "bpmp-guest: read stub");
+	deb_info("read stub");
 	return 0;
 }
 
@@ -287,7 +298,7 @@ int my_tegra_bpmp_transfer(struct tegra_bpmp *bpmp, struct tegra_bpmp_message *m
 {   
 
 	unsigned char io_buffer[MEM_SIZE];
-	//printk("%s\n", __func__);
+	deb_info("%s\n", __func__);
 
 	memset(io_buffer, 0, sizeof(io_buffer));
 	
@@ -304,23 +315,16 @@ int my_tegra_bpmp_transfer(struct tegra_bpmp *bpmp, struct tegra_bpmp_message *m
 	memcpy(&io_buffer[MRQ], &msg->mrq, sizeof(msg->mrq));
 	
 
-	// printk("&msg: %p\n", &msg);
-    // hexDump ("msg", &msg, sizeof(struct tegra_bpmp_message));
-    // printk("msg.tx.data: %p\n", msg->tx.data);
-    // hexDump ("msg.tx.data", msg->tx.data, msg->tx.size);
-	// printk("msg->rx.size: %ld\n", msg->rx.size);
-
-	//printk("Request");
-	//hexDump ("io_buffer", io_buffer, MEM_SIZE);
+    hexDump("msg", &msg, sizeof(struct tegra_bpmp_message));
+    deb_info("msg.tx.data: %p\n", msg->tx.data);
+    hexDump("msg.tx.data", msg->tx.data, msg->tx.size);
+	deb_info("msg->rx.size: %ld\n", msg->rx.size);
 	
 	// Execute the request by coping the io_buffer
 	memcpy_toio(mem_iova, io_buffer, MEM_SIZE);
 
 	// Read response to io_buffer
 	memcpy_fromio(io_buffer, mem_iova, MEM_SIZE);
-
-	// printk("Response");
-	// hexDump ("io_buffer", io_buffer, MEM_SIZE);
 
 	// Copy from io_buffer to msg, tx data and rx data
 	memcpy(&msg->tx.size, &io_buffer[TX_SIZ], sizeof(msg->tx.size));
@@ -331,7 +335,7 @@ int my_tegra_bpmp_transfer(struct tegra_bpmp *bpmp, struct tegra_bpmp_message *m
 	
 	memcpy(&msg->rx.ret, &io_buffer[RET_COD], sizeof(msg->rx.ret));
 
-	//printk("%s, END ret: %d\n", __func__, msg->rx.ret);
+	deb_info("%s, END ret: %d\n", __func__, msg->rx.ret);
 
     return msg->rx.ret;
 }
@@ -353,16 +357,16 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	void *userrxbuf = NULL;
 
 	if (len > 65535) {	/* paranoia */
-		printk("count %zu exceeds max # of bytes allowed, "
+		deb_error("count %zu exceeds max # of bytes allowed, "
 			"aborting write\n", len);
 		goto out_nomem;
 	}
 
-	printk(" wants to write %zu bytes\n", len);
+	deb_info(" wants to write %zu bytes\n", len);
 
 	if (len!=sizeof(struct tegra_bpmp_message ))
 	{
-		printk("bpmp-guest: message size %zu != %zu", len, sizeof(struct tegra_bpmp_message));
+		deb_error("message size %zu != %zu", len, sizeof(struct tegra_bpmp_message));
 		goto out_notok;
 	}
 
@@ -381,17 +385,17 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	ret = -EFAULT;
 	
 	if (copy_from_user(kbuf, buffer, len)) {
-		printk("copy_from_user(1) failed\n");
+		deb_error("copy_from_user(1) failed\n");
 		goto out_cfu;
 	}
 
 	if (copy_from_user(txbuf, kbuf->tx.data, kbuf->tx.size)) {
-		printk("copy_from_user(2) failed\n");
+		deb_error("copy_from_user(2) failed\n");
 		goto out_cfu;
 	}
 
 	if (copy_from_user(rxbuf, kbuf->rx.data, kbuf->rx.size)) {
-		printk("copy_from_user(3) failed\n");
+		deb_error("copy_from_user(3) failed\n");
 		goto out_cfu;
 	}	
 
@@ -402,22 +406,17 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	kbuf->rx.data=rxbuf;
 
 
-	if(!tegra_bpmp_host_device){
-		printk("bpmp-host: host device not initialised, can't do transfer!");
-		return -EFAULT;
-	}
-
 	ret = tegra_bpmp_transfer(tegra_bpmp_host_device, (struct tegra_bpmp_message *)kbuf);
 
 
 
 	if (copy_to_user((void *)usertxbuf, kbuf->tx.data, kbuf->tx.size)) {
-		printk("copy_to_user(2) failed\n");
+		deb_error("copy_to_user(2) failed\n");
 		goto out_notok;
 	}
 
 	if (copy_to_user((void *)userrxbuf, kbuf->rx.data, kbuf->rx.size)) {
-		printk("copy_to_user(3) failed\n");
+		deb_error("copy_to_user(3) failed\n");
 		goto out_notok;
 	}
 
@@ -425,7 +424,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	kbuf->rx.data=userrxbuf;
 	
 	if (copy_to_user((void *)buffer, kbuf, len)) {
-		printk("copy_to_user(1) failed\n");
+		deb_error("copy_to_user(1) failed\n");
 		goto out_notok;
 	}
 
@@ -435,7 +434,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	return len;
 out_notok:
 out_nomem:
-	printk ("memory allocation failed");
+	deb_error ("memory allocation failed");
 out_cfu:
 	kfree(kbuf);
 	kfree(txbuf);

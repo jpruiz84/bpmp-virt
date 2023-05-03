@@ -24,6 +24,17 @@ MODULE_AUTHOR("Vadim Likholetov");					 ///< The author -- visible when you use 
 MODULE_DESCRIPTION("NVidia BPMP Host Proxy Kernel Module"); ///< The description -- see modinfo
 MODULE_VERSION("0.1");						 ///< A version number to inform users
 
+
+#define BPMP_HOST_VERBOSE    0
+
+#if BPMP_HOST_VERBOSE
+#define deb_info(...)     printk(KERN_INFO DEVICE_NAME ": "__VA_ARGS__)
+#else
+#define deb_info(...)
+#endif
+
+#define deb_error(...)    printk(KERN_ALERT DEVICE_NAME ": "__VA_ARGS__)
+
 /**
  * Important variables that store data and keep track of relevant information.
  */
@@ -52,15 +63,16 @@ static struct file_operations fops =
 		.write = write,
 };
 
+// BPMP allowed resources structure
 static struct bpmp_allowed_res bpmp_ares; 
 
+#if BPMP_HOST_VERBOSE
 // Usage:
 //     hexDump(desc, addr, len, perLine);
 //         desc:    if non-NULL, printed as a description before hex dump.
 //         addr:    the address to start dumping from.
 //         len:     the number of bytes to dump.
 //         perLine: number of bytes on each output line.
-
 void static hexDump (
     const char * desc,
     const void * addr,
@@ -138,6 +150,9 @@ void static hexDump (
 
 	printk(DEVICE_NAME ": %s", out_buff);
 }
+#else
+	#define hexDump(...)
+#endif
 
 /**
  * Initializes module at installation
@@ -146,33 +161,34 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 {
 	int i;
 	
-	printk(KERN_INFO "bpmp-host: installing module.\n");
+	deb_info("%s, installing module.", __func__);
 
 	// Read allowed clocks and reset from the device tree
+	// if clocks or resets are not defined, not initialize the module
 	bpmp_ares.clocks_size = of_property_read_variable_u32_array(pdev->dev.of_node, 
 		"allowed-clocks", bpmp_ares.clock, 0, BPMP_HOST_MAX_CLOCKS_SIZE);
 
 	if(bpmp_ares.clocks_size <= 0){
-		printk(KERN_ALERT "bpmp-host: No allowed clocks defined");
+		deb_error("No allowed clocks defined");
 		return EINVAL;
 	}
 
-	printk(KERN_INFO "bpmp-host: bpmp_ares.clocks_size: %d", bpmp_ares.clocks_size);
+	deb_info("bpmp_ares.clocks_size: %d", bpmp_ares.clocks_size);
 	for (i = 0; i < bpmp_ares.clocks_size; i++)	{
-		printk(KERN_INFO "bpmp-host: bpmp_ares.clock %d", bpmp_ares.clock[i]);
+		deb_info("bpmp_ares.clock %d", bpmp_ares.clock[i]);
 	}
 
 	bpmp_ares.resets_size = of_property_read_variable_u32_array(pdev->dev.of_node, 
 		"allowed-resets", bpmp_ares.reset, 0, BPMP_HOST_MAX_RESETS_SIZE);
 
 	if(bpmp_ares.resets_size <= 0){
-		printk(KERN_ALERT "bpmp-host: No allowed resets defined");
+		deb_error("No allowed resets defined");
 		return EINVAL;
 	}
 
-	printk(KERN_INFO "bpmp-host: bpmp_ares.resets_size: %d", bpmp_ares.resets_size);
+	deb_info("bpmp_ares.resets_size: %d", bpmp_ares.resets_size);
 	for (i = 0; i < bpmp_ares.resets_size; i++)	{
-		printk(KERN_INFO "bpmp-host: bpmp_ares.reset %d", bpmp_ares.reset[i]);
+		deb_info("bpmp_ares.reset %d", bpmp_ares.reset[i]);
 	}
 
 
@@ -180,20 +196,20 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
 	if (major_number < 0)
 	{
-		printk(KERN_ALERT "bpmp-host: could not register number.\n");
+		deb_error("could not register number.\n");
 		return major_number;
 	}
-	printk(KERN_INFO "bpmp-host: registered correctly with major number %d\n", major_number);
+	deb_info("registered correctly with major number %d\n", major_number);
 
 	// Register the device class
 	bpmp_host_proxy_class = class_create(THIS_MODULE, CLASS_NAME);
 	if (IS_ERR(bpmp_host_proxy_class))
 	{ // Check for error and clean up if there is
 		unregister_chrdev(major_number, DEVICE_NAME);
-		printk(KERN_ALERT "bpmp-host: Failed to register device class\n");
+		deb_error("Failed to register device class\n");
 		return PTR_ERR(bpmp_host_proxy_class); // Correct way to return an error on a pointer
 	}
-	printk(KERN_INFO "bpmp-host: device class registered correctly\n");
+	deb_info("device class registered correctly\n");
 
 	// Register the device driver
 	bpmp_host_proxy_device = device_create(bpmp_host_proxy_class, NULL, MKDEV(major_number, 0), NULL, DEVICE_NAME);
@@ -201,14 +217,11 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 	{								 // Clean up if there is an error
 		class_destroy(bpmp_host_proxy_class); 
 		unregister_chrdev(major_number, DEVICE_NAME);
-		printk(KERN_ALERT "bpmp-host: Failed to create the device\n");
+		deb_error("Failed to create the device\n");
 		return PTR_ERR(bpmp_host_proxy_device);
 	}
 
-
-
-	printk(KERN_INFO "bpmp-host: device class created correctly\n"); // Made it! device was initialized
-
+	deb_info("device class created correctly\n"); // Made it! device was initialized
 
 	return 0;
 }
@@ -220,12 +233,12 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
  */
 static int bpmp_host_proxy_remove(struct platform_device *pdev)
 {
-	printk(KERN_INFO "bpmp-host: removing module.\n");
+	deb_info("removing module.\n");
 	device_destroy(bpmp_host_proxy_class, MKDEV(major_number, 0)); // remove the device
 	class_unregister(bpmp_host_proxy_class);						  // unregister the device class
 	class_destroy(bpmp_host_proxy_class);						  // remove the device class
 	unregister_chrdev(major_number, DEVICE_NAME);		  // unregister the major number
-	printk(KERN_INFO "bpmp-host: Goodbye from the LKM!\n");
+	deb_info("Goodbye from the LKM!\n");
 	unregister_chrdev(major_number, DEVICE_NAME);
 	return 0;
 }
@@ -235,7 +248,7 @@ static int bpmp_host_proxy_remove(struct platform_device *pdev)
  */
 static int open(struct inode *inodep, struct file *filep)
 {
-	printk(KERN_INFO "bpmp-host: device opened.\n");
+	deb_info("device opened.\n");
 	return 0;
 }
 
@@ -244,7 +257,7 @@ static int open(struct inode *inodep, struct file *filep)
  */
 static int close(struct inode *inodep, struct file *filep)
 {
-	printk(KERN_INFO "bpmp-host: device closed.\n");
+	deb_info("device closed.\n");
 	return 0;
 }
 
@@ -253,11 +266,14 @@ static int close(struct inode *inodep, struct file *filep)
  */
 static ssize_t read(struct file *filep, char *buffer, size_t len, loff_t *offset)
 {
-	printk(KERN_INFO "bpmp-host: read stub");
+	deb_info("read stub");
 	return 0;
 }
 
-
+/*
+ * Checks if the msg that wants to transmit through the
+ * bpmp-host is allowed by the device tree configuration
+ */
 static bool check_if_allowed(struct tegra_bpmp_message *msg)
 {
 	struct mrq_reset_request *reset_req = NULL;
@@ -283,7 +299,7 @@ static bool check_if_allowed(struct tegra_bpmp_message *msg)
 				return true;
 			}
 		}
-		printk(DEVICE_NAME ": Error, reset not allowed for: %d", reset_req->reset_id);
+		deb_error("Error, reset not allowed for: %d", reset_req->reset_id);
 		return false;
 	}
 	else if (msg->mrq == MRQ_CLK){
@@ -305,12 +321,12 @@ static bool check_if_allowed(struct tegra_bpmp_message *msg)
 			return true;
 		}
 
-		printk(DEVICE_NAME ": Error, clock not allowed for: %d, with command: %d", 
+		deb_error("Error, clock not allowed for: %d, with command: %d", 
 			clock_req->cmd_and_id & 0x0FFF, clk_cmd);
 		return false;
 	}
 
-	printk(DEVICE_NAME ": Error, msg->mrq %d not allowed", msg->mrq);
+	deb_error("Error, msg->mrq %d not allowed", msg->mrq);
 
 	return false;
 }
@@ -335,12 +351,12 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	void *userrxbuf = NULL;
 
 	if (len > 65535) {	/* paranoia */
-		printk(DEVICE_NAME ": count %zu exceeds max # of bytes allowed, "
+		deb_error("count %zu exceeds max # of bytes allowed, "
 			"aborting write\n", len);
 		goto out_nomem;
 	}
 
-	printk(DEVICE_NAME ": wants to write %zu bytes\n", len);
+	deb_info("wants to write %zu bytes\n", len);
 
 
 	ret = -ENOMEM;
@@ -356,7 +372,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	
 	// Copy header
 	if (copy_from_user(kbuf, buffer, len)) {
-		printk(DEVICE_NAME ": copy_from_user(1) failed\n");
+		deb_error("copy_from_user(1) failed\n");
 		goto out_cfu;
 	}
 
@@ -366,7 +382,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 			goto out_nomem;
 		memset(txbuf, 0, BUF_SIZE);
 		if (copy_from_user(txbuf, kbuf->tx.data, kbuf->tx.size)) {
-			printk(DEVICE_NAME ": copy_from_user(2) failed\n");
+			deb_error("copy_from_user(2) failed\n");
 			goto out_cfu;
 		}
 	}
@@ -377,7 +393,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	
 	memset(rxbuf, 0, BUF_SIZE);
 	if (copy_from_user(rxbuf, kbuf->rx.data, kbuf->rx.size)) {
-		printk(DEVICE_NAME ": copy_from_user(3) failed\n");
+		deb_error("copy_from_user(3) failed\n");
 		goto out_cfu;
 	}	
 
@@ -393,7 +409,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	hexDump (DEVICE_NAME ": txbuf", txbuf, kbuf->tx.size);
 
 	if(!tegra_bpmp_host_device){
-		printk(DEVICE_NAME ": host device not initialised, can't do transfer!");
+		deb_error("host device not initialised, can't do transfer!");
 		return -EFAULT;
 	}
 
@@ -406,12 +422,12 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 
 
 	if (copy_to_user((void *)usertxbuf, kbuf->tx.data, kbuf->tx.size)) {
-		printk(DEVICE_NAME ": copy_to_user(2) failed\n");
+		deb_error("copy_to_user(2) failed\n");
 		goto out_notok;
 	}
 
 	if (copy_to_user((void *)userrxbuf, kbuf->rx.data, kbuf->rx.size)) {
-		printk(DEVICE_NAME ": copy_to_user(3) failed\n");
+		deb_error("copy_to_user(3) failed\n");
 		goto out_notok;
 	}
 
@@ -419,7 +435,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	kbuf->rx.data=userrxbuf;
 	
 	if (copy_to_user((void *)buffer, kbuf, len)) {
-		printk(DEVICE_NAME ": copy_to_user(1) failed\n");
+		deb_error("copy_to_user(1) failed\n");
 		goto out_notok;
 	}
 
@@ -429,7 +445,7 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	return len;
 out_notok:
 out_nomem:
-	printk(DEVICE_NAME ": memory allocation failed");
+	deb_error("memory allocation failed");
 out_cfu:
 	kfree(kbuf);
 	kfree(txbuf);
