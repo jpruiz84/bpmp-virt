@@ -247,6 +247,12 @@ the UARTA that is BPMP dependent
 
             ...
 
+    Also, you will need to add the alias for the uarta node.
+
+        aliases {
+          serial0 = &uarta;
+        }; 
+
 9. Before running the VM you will need to bind the UARTA to the vfio-platform driver:
 
         echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
@@ -275,7 +281,7 @@ the UARTA that is BPMP dependent
 12. To test the UARTA you can send a *"123"* string with the next command from
     the VM:
 
-      echo 123 > /dev/ttyTHS0
+        echo 123 > /dev/ttyTHS0
 
     The UARTA (or UART1 in the full package) in the Nvidia Jetson Orin AGX is 
     connected to the external  40-pin connector. You can connect a USB to UART 
