@@ -105,13 +105,13 @@ The modifications to the BPMP driver are included in the patch:
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
-    cd sources/kernel
-    git clone https://github.com/jpruiz84/bpmp-virt
+        cd sources/kernel
+        git clone https://github.com/jpruiz84/bpmp-virt
 
 6. Apply the patches from this repo with:
 
-    cd Linux_for_Tegra/sources/kernel/kernel-5.10
-    git apply ../bpmp-virt/*.patch
+        cd Linux_for_Tegra/sources/kernel/kernel-5.10
+        git apply ../bpmp-virt/*.patch
     
 
 7. Add the bpmp-virt kernel overlay by adding the line "bpmp-virt" to the files 
