@@ -90,18 +90,19 @@ The modifications to the BPMP driver are included in the patch:
 
 1. Get ready a development environment with Ubuntu 20.04 on your Nvidia Orin.
 
-2. Download the Nvidia L4T Driver Package (BSP) version 35.2.1 from:
+2. Download the Nvidia L4T Driver Package (BSP) version 35.3.1 from (also 
+   tested with version 35.2.1):
         
-        https://developer.nvidia.com/embedded/jetson-linux-r3521
+        https://developer.nvidia.com/embedded/jetson-linux-r3531
 
 3. Extract the Nvidia L4T Driver Package (BSP):
 
-        tar -xvf Jetson_Linux_R35.2.1_aarch64.tbz2 
+        tar -xvf Jetson_Linux_R35.3.1_aarch64.tbz2 
 
-4. Sync the source code to the tag *jetson_35.2.1*
+4. Sync the source code to the tag *jetson_35.3.1*
 
         cd Linux_for_Tegra
-        ./source_sync.sh -t jetson_35.2.1
+        ./source_sync.sh -t jetson_35.3.1
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
