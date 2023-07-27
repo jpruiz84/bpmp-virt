@@ -18,6 +18,6 @@
   # Apply the device tree overlay
   hardware.deviceTree.overlays = [{
     name = "bpmp-virt-host";
-    dtsFile = "./nixosModules/bpmp-virt-host.dts";
+    dtsFile = ./bpmp-virt-host.dts;
   }];
 }
