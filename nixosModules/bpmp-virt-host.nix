@@ -17,7 +17,7 @@
 
   # Apply the device tree overlay
   hardware.deviceTree.overlays = [{
-    name = "bpmp-virt-host";
-    dtsFile = ./bpmp-virt-host.dts;
+    name = "bpmp-host-proxy";
+    dtsFile = ./bpmp-host-proxy.dts;
   }];
 }
