@@ -13,4 +13,5 @@
       };
     }
   ];
+  hardware.deviceTree.overlays.dtsFile = ./bpmp-virt.dts;
 }
