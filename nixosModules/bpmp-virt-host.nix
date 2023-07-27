@@ -1,9 +1,10 @@
 # Copyright 2023 TII (SSRC) and the Ghaf contributors
 # SPDX-License-Identifier: Apache-2.0
-{lib, ...}: {
+{ config, lib, ... }: {
   imports = [
     ./bpmp-virt-common.nix
   ];
+
   boot.kernelPatches = [
     {
       name = "BPMP virt enable host";
@@ -13,5 +14,9 @@
       };
     }
   ];
-  hardware.deviceTree.overlays.dtsFile = ./bpmp-virt.dts;
+
+  # Apply the device tree overlay
+  hardware.deviceTree.overlays = [{
+    subomdule = "./bpmp-virt-host.dts";
+  }];
 }
