@@ -17,6 +17,7 @@
 
   # Apply the device tree overlay
   hardware.deviceTree.overlays = [{
-    subomdule = "./bpmp-virt-host.dts";
+    name = "bpmp-virt-host";
+    dtsFile = "./bpmp-virt-host.dts";
   }];
 }
