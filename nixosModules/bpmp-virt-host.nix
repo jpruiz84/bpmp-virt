@@ -18,6 +18,6 @@
   # Apply the device tree overlay
   hardware.deviceTree = {
     enable = true;
-    name = ./bpmp-host-proxy.dts;
+    name = "./bpmp-host-proxy.dts";
   };
 }
