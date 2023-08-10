@@ -11,5 +11,5 @@ bpmp_host_proxy: bpmp_host_proxy {
                      102>;
     allowed-reset = <100>;
     status = "okay";
- };
+  };
 };
