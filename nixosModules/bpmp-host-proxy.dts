@@ -3,7 +3,8 @@
 
 / {
 bpmp_host_proxy: bpmp_host_proxy {
-    compatible = "nvidia,bpmp-host-proxy";
+     // compatible = "nvidia,bpmp-host-proxy";
+     compatible = "nvidia,tegra234-bpmp", "nvidia,tegra186-bpmp";
      // allowed-clocks = <TEGRA234_CLK_UARTA 
      //                 TEGRA234_CLK_PLLP_OUT0>;
      // allowed-rese
