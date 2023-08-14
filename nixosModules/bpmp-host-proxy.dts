@@ -1,3 +1,5 @@
+/dts-v1/;
+
 / {
 bpmp_host_proxy: bpmp_host_proxy {
      // compatible = "nvidia,bpmp-host-proxy";
