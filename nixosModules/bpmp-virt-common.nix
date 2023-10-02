@@ -1,6 +1,7 @@
 # Copyright 2023 TII (SSRC) and the Ghaf contributors
 # SPDX-License-Identifier: Apache-2.0
 {lib, ...}: {
+  environment.systemPackages = [ pkgs.dtc ];
   boot.kernelPatches = [
     {
       name = "BPMP Driver patch";
