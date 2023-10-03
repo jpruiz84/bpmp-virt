@@ -22,14 +22,14 @@
   # Apply the device tree overlay
   hardware.deviceTree.overlays = [
     {
-      name = "bpmp-host-proxy";
+      name = "bpmp_host_proxy";
       # dtsFile = ./bpmp-host-proxy.dts;
       dtsText = ''
         /dts-v1/;
         / {
         compatible="nvidia,tegra186";
         bpmp_host_proxy: bpmp_host_proxy {
-        				compatible = "nvidia,bpmp-host-proxy";
+        				compatible = "nvidia,bpmp_host_proxy";
         				allowed-clocks = <155
                              102>;
         				allowed-reset = <100>;
