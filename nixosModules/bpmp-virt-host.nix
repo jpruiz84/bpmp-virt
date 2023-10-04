@@ -24,20 +24,21 @@
   hardware.deviceTree.overlays = [
     {
       name = "bpmp-host-proxy";
+      dtboFile = ./bpmp-host-proxy.dtbo;
       # dtsFile = ./bpmp-host-proxy.dts;
-      dtsText = ''
-        /dts-v1/;
-        / {
-        compatible="nvidia,tegra186";
-        bpmp_host_proxy: bpmp_host_proxy {
-        				compatible = "nvidia,bpmp-host-proxy";
-        				allowed-clocks = <155
-                             102>;
-        				allowed-reset = <100>;
-                status = "okay";
-            };
-        };
-      '';
+      # dtsText = ''
+      #   /dts-v1/;
+      #   / {
+      #   compatible="nvidia,tegra186";
+      #   bpmp_host_proxy: bpmp_host_proxy {
+      #   				compatible = "nvidia,bpmp-host-proxy";
+      #   				allowed-clocks = <155
+      #                        102>;
+      #   				allowed-reset = <100>;
+      #           status = "okay";
+      #       };
+      #   };
+      # '';
     }
   ];
 }
