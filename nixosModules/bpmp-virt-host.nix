@@ -19,6 +19,7 @@
     }
   ];
 
+  hardware.deviceTree.enable = true;
   # Apply the device tree overlay
   hardware.deviceTree.overlays = [
     {
