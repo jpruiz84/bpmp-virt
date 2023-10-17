@@ -25,6 +25,14 @@
       name = "Bpmp Host Proxy Dts";
       patch = ./0005-bpmp-host-proxy-dts.patch;
     }
+    {
+      name = "BPMP virt enable host";
+      patch = null;
+      extraStructuredConfig = with lib.kernel; {
+        VFIO_PLATFORM = yes;
+        TEGRA_BPMP_HOST_PROXY = yes;
+      };
+    }
   ];
 
   systemd.services.bindUARTA = {
