@@ -25,8 +25,7 @@
       }))
 
       {
-        nixosModules.bpmp-virt-host = ./nixosModules/bpmp-virt-host.nix;
-        nixosModules.bpmp-virt-guest = ./nixosModules/bpmp-virt-guest.nix;
+        nixosModules.bpmp-virt-host = ./modules/bpmp-virt-host;
       }
     ];
 }
