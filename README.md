@@ -159,24 +159,24 @@ the UARTA that is BPMP dependent
    nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-uart.dtsi
    with this content:
 
-	uarta: serial@3100000 {
-		compatible = "nvidia,tegra194-dummy", "nvidia,vfio-platform";
-		//iommus = <&smmu_niso0 TEGRA_SID_NISO0_GPCDMA_0>;
-		iommus = <&smmu_niso0 TEGRA_SID_NISO1_SMMU_TEST>;
-		dma-coherent;
-		reg = <0x0 0x03100000 0x0 0x10000>;
-		reg-shift = <2>;
-		interrupts = <0 TEGRA234_IRQ_UARTA 0x04>;
-		nvidia,memory-clients = <14>;
-		dmas = <&gpcdma 8>, <&gpcdma 8>;
-		dma-names = "rx", "tx";
-		clocks = <&bpmp_clks TEGRA234_CLK_UARTA>,
-			<&bpmp_clks TEGRA234_CLK_PLLP_OUT0>;
-		clock-names = "serial", "parent";
-		resets = <&bpmp_resets TEGRA234_RESET_UARTA>;
-		reset-names = "serial";
-		status = "okay";
-	 };
+		uarta: serial@3100000 {
+			compatible = "nvidia,tegra194-dummy", "nvidia,vfio-platform";
+			//iommus = <&smmu_niso0 TEGRA_SID_NISO0_GPCDMA_0>;
+			iommus = <&smmu_niso0 TEGRA_SID_NISO1_SMMU_TEST>;
+			dma-coherent;
+			reg = <0x0 0x03100000 0x0 0x10000>;
+			reg-shift = <2>;
+			interrupts = <0 TEGRA234_IRQ_UARTA 0x04>;
+			nvidia,memory-clients = <14>;
+			dmas = <&gpcdma 8>, <&gpcdma 8>;
+			dma-names = "rx", "tx";
+			clocks = <&bpmp_clks TEGRA234_CLK_UARTA>,
+				<&bpmp_clks TEGRA234_CLK_PLLP_OUT0>;
+			clock-names = "serial", "parent";
+			resets = <&bpmp_resets TEGRA234_RESET_UARTA>;
+			reset-names = "serial";
+			status = "okay";
+		 };
 
     This places the UARTA alone in the IOMMU group TEGRA_SID_NISO1_SMMU_TEST.
     Also, this configuration disables the default nvidia,tegra194-hsuart driver
