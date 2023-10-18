@@ -11,32 +11,34 @@ the device. Due to Nvidia does not support a mailbox passthrough to
 communicate a VM directly to the BPMP we need to virtualize the BPMP services. 
 We have found that the reset and clock transactions are done in the BPMP 
 driver with a common function that is called **tegra_bpmp_transfer**. Then, 
-to virtualize the BPMP we will virtualize this function.  
-                                                
-                                  VM                       
-                                   +------------------+    
-                                   |GPU or UART driver|    
-                                   +------------------+    
-                                             | Reset/clocks
-                                             v             
-                                    +------------------+   
-                                    | BPMP guest proxy |   
-                                    +------------------+   
-                                  -----------|-----------  
-                                  VMM/Qemu   v             
-                                   +------------------+    
-                                   |   BPMP VMM guest |    
-                                   +------------------+    
-                                  -----------|-----------  
-    Host                          Host       v             
-     +------------------+           +-----------------+    
-     |GPU or UART driver|           | BPMP host proxy |    
-     +------------------+           +-----------------+    
-               | Reset/clocks                |             
-               v                             v             
-       +--------------+              +--------------+      
-       | BPMP driver  |              | BPMP driver  |      
-       +--------------+              +--------------+      
+to virtualize the BPMP we will virtualize this function.
+
+					    VM		       
+				   +------------------+    
+				   |GPU or UART driver|    
+				   +------------------+    
+					     | Reset/clocks
+					     v	     
+				   +------------------+   
+				   | BPMP guest proxy |   
+				   +------------------+
+					     |
+				  -----------|-----------  
+				  VMM/Qemu   v	     
+				   +------------------+    
+				   |   BPMP VMM guest |    
+				   +------------------+    
+					     |
+				  -----------|-----------  
+    Host			  Host       v	     
+     +------------------+	   +-----------------+    
+     |GPU or UART driver|	   | BPMP host proxy |    
+     +------------------+	   +-----------------+    
+	       | Reset/clocks		     |	     
+	       v			     v	     
+       +--------------+		     +--------------+      
+       | BPMP driver  |		     | BPMP driver  |      
+       +--------------+		     +--------------+      
 
 
 ## General design assumptions
@@ -45,7 +47,8 @@ to virtualize the BPMP we will virtualize this function.
    configuration.
 2. Minimal modifications to kernel bpmp source code.
 3. Add another repository for BPMP proxy (host and guest) as kernel overlay.
-
+   This repository with this README.md is a fork of such previous work.
+   Specificly, https://github.com/jpruiz84/bpmp-virt has been forked.
 
 ### BPMP host proxy
 
@@ -64,6 +67,7 @@ to virtualize the BPMP we will virtualize this function.
 - Communicates the BPMP-host to the BPMP-guest through a IOMEM in the VMM/Qemu.
 - Compile Qemu with additions and install it on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
+  Alternatively you can use 
 
 
 ### BPMP guest proxy
@@ -84,9 +88,10 @@ The BPMP driver has small modifications intended to:
 - Reads the *virtual-pa* property from the guest device tree to pass the BPMP VMM guest 
   VPA to the BPMP guest proxy module.
 
-Modifications to the BPMP driver are included in the patch on https://github.com/jpruiz84/bpmp-virt 
+Modifications to the BPMP driver are included in a patch for NVIDIA kernel-5.10 with tag 
+jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git 
 
-    0003-bpmp-support-bpmp-virt.patch
+    kernel-5.10_bpmp-virt.patch
 
 ## Installation steps
 
@@ -94,105 +99,132 @@ Modifications to the BPMP driver are included in the patch on https://github.com
 
 2. Download the Nvidia L4T Driver Package (BSP) version 35.3.1 from (also 
    tested with version 35.2.1):
-        
-        https://developer.nvidia.com/embedded/jetson-linux-r3531
+	
+	https://developer.nvidia.com/embedded/jetson-linux-r3531
 
 3. Extract the Nvidia L4T Driver Package (BSP):
 
-        tar -xvf Jetson_Linux_R35.3.1_aarch64.tbz2 
+	tar -xvf Jetson_Linux_R35.3.1_aarch64.tbz2 
 
 4. Sync the source code to the tag *jetson_35.3.1*
 
-        cd Linux_for_Tegra
-        ./source_sync.sh -t jetson_35.3.1
+	cd Linux_for_Tegra
+	./source_sync.sh -t jetson_35.3.1
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
-        cd sources/kernel
-        git clone https://github.com/jpruiz84/bpmp-virt
+	cd sources/kernel
+	git clone https://github.com/KimGSandstrom/bpmp-virt.git
 
-6. Apply the patches from this repo with:
+6. Apply the patch from this repo with:
 
-        cd Linux_for_Tegra/sources/kernel/kernel-5.10
-        git apply ../bpmp-virt/*.patch
+	git -C kernel-5.10/ apply ../bpmp-virt/kernel-5.10_bpmp-virt.patch
     
 
-7. Add the bpmp-virt kernel overlay by adding the line "bpmp-virt" to the files 
+7. NOTE that the bpmp-virt kernel overlay is added by the patch. The line 
+   "bpmp-virt" has been added to the files.
 
-        kernel-5.10/kernel-int-overlays.txt
-        kernel-5.10/kernel-overlays.txt 
+	kernel-5.10/kernel-int-overlays.txt
+	kernel-5.10/kernel-overlays.txt 
 
-8. Add the following configuration lines to 
-   Linux_for_Tegra/sources/kernel/kernel-5.10/arch/arm64/configs/defconfig
+8. Check that the following configuration lines were added by the patch to 
+   kernel-5.10/arch/arm64/configs/defconfig
 
 	CONFIG_VFIO=y
 	CONFIG_KVM_VFIO=y
-        CONFIG_VFIO_PLATFORM=y
-        CONFIG_TEGRA_BPMP_GUEST_PROXY=y
-        CONFIG_TEGRA_BPMP_HOST_PROXY=y
+	CONFIG_VFIO_PLATFORM=y
+	CONFIG_TEGRA_BPMP_GUEST_PROXY=y
+	CONFIG_TEGRA_BPMP_HOST_PROXY=y
 
-9. Compile the Linux kernel with the next commands
+9. Compile the Linux kernel and the bpmp-virt kernel overlay with the next commands
 
-        cd Linux_for_Tegra/sources/kernel
-        make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 defconfig
-        make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 Image
+	cd Linux_for_Tegra/sources/kernel
+	make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 defconfig
+	make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 Image
 
-    You will find the compiled kernel image on:
+    You will find the compiled kernel image in:
 
-        kernel_out/arch/arm64/boot/Image 
+	kernel_out/arch/arm64/boot/Image 
 
-    **IMPORTANT NOTE:** use this same image for host and kernel.
+    **IMPORTANT NOTE:** use this same image for both host and kernel.
+
 
 ## UARTA passthrough instructions
 
 This instructions describes the modifications on the device tree to passthrough
 the UARTA that is BPMP dependent
 
-1. For the host modify the uarta node in Linux_for_Tegra/sources/hardware/ 
+1. For the host, modify the uarta node in Linux_for_Tegra/sources/hardware/ 
    nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-uart.dtsi
-   with the next content:
+   with this content:
 
-        uarta: serial@3100000 {
-            compatible = "nvidia,tegra194-dummy";
-            //iommus = <&smmu_niso0 TEGRA_SID_NISO0_GPCDMA_0>;
-            iommus = <&smmu_niso0 TEGRA_SID_NISO1_SMMU_TEST>;
-            dma-coherent;
-            reg = <0x0 0x03100000 0x0 0x10000>;
-            reg-shift = <2>;
-            interrupts = <0 TEGRA234_IRQ_UARTA 0x04>;
-            nvidia,memory-clients = <14>;
-            dmas = <&gpcdma 8>, <&gpcdma 8>;
-            dma-names = "rx", "tx";
-            clocks = <&bpmp_clks TEGRA234_CLK_UARTA>,
-                <&bpmp_clks TEGRA234_CLK_PLLP_OUT0>;
-            clock-names = "serial", "parent";
-            resets = <&bpmp_resets TEGRA234_RESET_UARTA>;
-            reset-names = "serial";
-            status = "okay";
-        };
+	uarta: serial@3100000 {
+		compatible = "nvidia,tegra194-dummy", "nvidia,vfio-platform";
+		//iommus = <&smmu_niso0 TEGRA_SID_NISO0_GPCDMA_0>;
+		iommus = <&smmu_niso0 TEGRA_SID_NISO1_SMMU_TEST>;
+		dma-coherent;
+		reg = <0x0 0x03100000 0x0 0x10000>;
+		reg-shift = <2>;
+		interrupts = <0 TEGRA234_IRQ_UARTA 0x04>;
+		nvidia,memory-clients = <14>;
+		dmas = <&gpcdma 8>, <&gpcdma 8>;
+		dma-names = "rx", "tx";
+		clocks = <&bpmp_clks TEGRA234_CLK_UARTA>,
+			<&bpmp_clks TEGRA234_CLK_PLLP_OUT0>;
+		clock-names = "serial", "parent";
+		resets = <&bpmp_resets TEGRA234_RESET_UARTA>;
+		reset-names = "serial";
+		status = "okay";
+	 };
 
     This places the UARTA alone in the IOMMU group TEGRA_SID_NISO1_SMMU_TEST.
     Also, this configuration disables the default nvidia,tegra194-hsuart driver
     by replacing it with a dummy driver.
 
-2. For the host also add the bpmp_host_proxy node to Linux_for_Tegra/sources/
+2. Steps 3 - 4 below are also availabe in the patch file.
+
+	host-dtsi_bpmp-virt.patch
+
+   in https://github.com/KimGSandstrom/bpmp-virt.git
+
+3. For the host add the bpmp_host_proxy node to Linux_for_Tegra/sources/
    hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
    with the next content:
 
-        bpmp_host_proxy: bpmp_host_proxy {
-            compatible = "nvidia,bpmp-host-proxy";
-            allowed-clocks = <TEGRA234_CLK_UARTA 
-                            TEGRA234_CLK_PLLP_OUT0>;
-            allowed-resets = <TEGRA234_RESET_UARTA>;				  
-            status = "okay";
-        };
+	bpmp_host_proxy: bpmp_host_proxy {
+			compatible = "nvidia,bpmp-host-proxy";
+			dmas = <&gpcdma 8>, <&gpcdma 8>;
+			dma-names = "rx", "tx";
+			clocks = <&bpmp_clks TEGRA234_CLK_UARTA>,
+				<&bpmp_clks TEGRA234_CLK_PLLP_OUT0>;
+			clock-names = "serial", "parent";
+			resets = <&bpmp_resets TEGRA234_RESET_UARTA>;
+			reset-names = "serial";
+			status = "okay";
+		};
+
+    This places the UARTA alone in the IOMMU group TEGRA_SID_NISO1_SMMU_TEST.
+    Also, this configuration disables the default nvidia,tegra194-hsuart driver
+    by replacing it with a dummy driver.
+
+4. For the host add the bpmp_host_proxy node to Linux_for_Tegra/sources/
+   hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
+   with the next content:
+
+	bpmp_host_proxy: bpmp_host_proxy {
+	    compatible = "nvidia,bpmp-host-proxy";
+	    allowed-clocks = <TEGRA234_CLK_UARTA 
+			    TEGRA234_CLK_PLLP_OUT0>;
+	    allowed-resets = <TEGRA234_RESET_UARTA>;				  
+	    status = "okay";
+	};
 
     With this configuration we enable the bpmp-host in the host. Also, here 
     we inform to the bpmp-host which are the allowed resources (clocks and 
     resets) that can be used by the VMs. Copy these resources from the device
     tree node of the devices that you will passthrough.
 
-3. If it is not already there, remember to add the interrupts missing configurations to the
+5. If it is not already there, remember to add the interrupts configurations to the
    node "*intc: interrupt-controller@f400000*" in the file Linux_for_Tegra/sources/
    hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-minimal.dtsi 
 
@@ -200,43 +232,61 @@ the UARTA that is BPMP dependent
 			(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
 		interrupt-parent = <&intc>;
 
-4. Compile the device tree with the command:
+6. Compile the device tree with the command:
 
-        cd Linux_for_Tegra/sources/kernel
-        make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 dtbs
+	cd Linux_for_Tegra/sources/kernel
+	make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 dtbs
 
     You will find the compiled device tree for Nvidia Jetson Orin AGX host on:
 
-        kernel_out/arch/arm64/boot/dts/nvidia/tegra234-p3701-0000-p3737-0000.dtb
+	kernel_out/arch/arm64/boot/dts/nvidia/tegra234-p3701-0000-p3737-0000.dtb
 
-5. Copy Image and tegra234-p3701-0000-p3737-0000.dtb files to the appropriate locations 
-   defined in /boot/extlinux/extlinux.conf
+7. Copy kernel Image and tegra234-p3701-0000-p3737-0000.dtb files to the appropriate 
+   locations defined in /boot/extlinux/extlinux.conf
 
-6. For the guest: Add to the guest's device tree root, the bpmp node with the the Qemu bpmp guest 
-   VPA address property (virtual-pa):
+8. Extract and edit guests Device Tree
+	Dump the guests Device Tree from Qemu:
 
-        bpmp: bpmp {
-            compatible = "nvidia,tegra234-bpmp", "nvidia,tegra186-bpmp";
-            virtual-pa = <0x0 0x090c0000>; 
-            #clock-cells = <1>;
-            #reset-cells = <1>;
-            status = "okay";
-        };
+		qemu-system-aarch64 -machine virt,accel=kvm,dumpdtb=virt.dtb -cpu host
+
+	Extract the dts code for the dtb file and copy it for editing:
+
+		dtc -Idtb -Odts virt.dtb -o virt-qemu-8.1.0.dts
+		cp virt-qemu-8.1.0.dts uarta-qemu-8.1.0.dts
+
+	Now you can edit the guest Device Tree uarta-qemu-8.1.0.dts.
+
+9. Amendments in steps 10 - 11 to guest's Device Tree are alternatively available in 
+   the patch file
+
+	guest-dts_bpmp-virt.patch
+
+   Note the the patch file is for files named 'virt-qemu-8.1.0.dts' and 'uarta-qemu-8.1.0.dts'.
+   adjust names or patchfile accordingly. Alternatively do the steps 9 - 10.
+
+
+10. To the guest's device tree root, add the VPA address property (virtual-pa) into the 
+    bpmp node for the the Qemu bpmp guest 
+
+	nvim uarta-qemu-8.1.0.dts
+
+    add this code:
+
+	bpmp: bpmp {
+	    compatible = "nvidia,tegra234-bpmp", "nvidia,tegra186-bpmp";
+	    virtual-pa = <0x0 0x090c0000>; 
+	    #clock-cells = <1>;
+	    #reset-cells = <1>;
+	    status = "okay";
+	};
 
     Here you define to the bpmp-guest the address of the VPA (virtual-pa), that in 
     this case is 0x090c0000
 
-7. For UARTA passthrough you will need to add the *uarta* node inside the guest
-	Dump the guests Device Tree from Qemu:
-		qemu-system-aarch64 -machine virt,accel=kvm,dumpdtb=virt.dtb -cpu host
+11. For UARTA passthrough you will need to add the *uarta* node to the guest DT.
+	Add the uarta node (to the file uarta-qemu-8.1.0.dts)
 
-	Extract the dts code for the dtb file:
-		dtc -Idtb -Odts virt.dtb -o uarta.dts
-
-	Edit the guest Device tree and insert the uarta node.
-	nvim uarta.dts
-
-	   *platform@c00000* node:
+	*platform@c00000* node:
 
 		platform@c000000 {
 		    interrupt-parent = <0x8001>;
@@ -244,8 +294,6 @@ the UARTA that is BPMP dependent
 		    #address-cells = <0x01>;
 		    #size-cells = <0x01>;
 		    compatible = "qemu,platform\0simple-bus";
-
-
 
 		    uarta: serial@c000000 {
 			compatible = "nvidia,tegra194-hsuart";
@@ -264,63 +312,72 @@ the UARTA that is BPMP dependent
 	Also, you will need to add the alias for the uarta node. This code must be inserted 
 	after the uarta definition. For instance at the end of the root block
 
-        	aliases {
-        	  serial0 = &uarta;
-        	}; 
+		aliases {
+		  serial0 = &uarta;
+		};
 
-8.	Compile the dtb file Qemu will use:
-		dtc -Odtb -Idts uarta.dts -o uarta.dtb
+12. Compile the ammended guest Device Tree
 
-9. Reboot host and before running the VM you will need to bind the UARTA to the vfio-platform driver:
+		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb 
 
-        echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
-        echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
+13.	Also, you will need to allow the unsafe interrupts
+	Either type as sudo:
 
-10. Also, you will need to allow the unsafe interrupts:
-       
-        Either type as sudo:
-        	echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
-	Or add this to kernel boot parameters (before reboot)
+		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+
+	Or add this kernel boot parameter in /boot/extlinux/extlinux.conf
+
 		vfio_iommu_type1.allow_unsafe_interrupts=1
 
-	You can check the status with
-		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+	After reboot, you can check the status with
+
+		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts Or with 'modinfo vfio_iommu_type1'
+
 	Or with
+
 		'modinfo vfio_iommu_type1'
 
-11. Finally you can run your VM with the next Qemu command:
+14. Finally you can run your VM 
+	Use the following environment variables and Qemu command
+	Qemu monitor will be on pty, VM console will be in the startup terminal:
 
-        /home/user/qemu-bpmp/build/qemu-system-aarch64 \
-            -nographic \
-            -machine virt,accel=kvm \
-            -cpu host \
-            -m 1G \
-            -no-reboot \
-            -kernel Image \
-            -drive file=rootfs_ubuntu_nvidia_orin.img.raw,if=virtio,format=raw \
-            -net user,hostfwd=tcp::2222-:22 -net nic \
-            -device vfio-platform,host=3100000.serial \
-            -dtb uarta.dtb \
-            -append "rootwait root=/dev/vda console=ttyAMA0"
+	    rootfs="tegra_rootfs.qcow2"
+	    kernel=Image
+	    dtb=uarta-qemu-8.1.0.dtb
+	    sudo -E qemu-system-aarch64 \
+		    -nographic \
+		    -machine virt,accel=kvm \
+		    -cpu host \
+		    -m 4G \
+		    -no-reboot \
+		    -kernel ${kernel} \
+		    -drive file=${rootfs},if=virtio,format=qcow2 \
+		    -net user,hostfwd=tcp::2222-:22 -net nic \
+		    -device vfio-platform,host=3100000.serial \
+		    -dtb ${dtb} \
+		    -append "rootwait root=/dev/vda console=ttyAMA0" \
+		    -chardev pty,id=mon0 \
+		    -mon chardev=mon0,mode=readline
 
-12. To test the UARTA you can send a *"123"* string with this command from
+15. To test the UARTA you can send a *"123"* string with this command from
     the VM:
 
-        echo 123 > /dev/ttyTHS0
+	echo 123 > /dev/ttyTHS0
 
     The UARTA (or UART1 in the full package) in the Nvidia Jetson Orin AGX is 
     connected to the external  40-pin connector. You can connect a USB to UART 
     as follows (the number 1 pin is top right):
 
-        Nvidia Orin AGX      USB to UART
-        40 pin connector       cable
-        ----------------------------------
-        6  (GND)              Black (GND)
-        8  (UART1_TX)         Yellow (RX)
-        10 (UART1_RX)         Orange (TX)
+	Nvidia Orin AGX      USB to UART
+	40 pin connector       cable
+	----------------------------------
+	6  (GND)	      Black (GND)
+	8  (UART1_TX)	 Yellow (RX)
+	10 (UART1_RX)	 Orange (TX)
 
     Then you can get the output of what you sent on your PC from a serial
     terminal:
 
-        picocom -b 9600 /dev/ttyUSB0
+	picocom -b 9600 /dev/ttyUSB0
     
