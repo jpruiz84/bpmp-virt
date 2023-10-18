@@ -1,49 +1,49 @@
 # BPMP virtualization
 
-The BPMP (Boot and Power Management Processor) virtualization allows the 
-virtual machines (VMs) to access the BPMP resources (such as specific 
-devices' clocks and resets) to passthrough platform devices where the 
+The BPMP (Boot and Power Management Processor) virtualization allows the
+virtual machines (VMs) to access the BPMP resources (such as specific
+devices' clocks and resets) to passthrough platform devices where the
 drivers requires to control the resets and clocks configurations.
 
-The next diagram shows on the left how the GPU or UART drivers on host 
-communicate with the BPMP driver to enable the reset and clocks to init 
-the device. Due to Nvidia does not support a mailbox passthrough to 
-communicate a VM directly to the BPMP we need to virtualize the BPMP services. 
-We have found that the reset and clock transactions are done in the BPMP 
-driver with a common function that is called **tegra_bpmp_transfer**. Then, 
+The next diagram shows on the left how the GPU or UART drivers on host
+communicate with the BPMP driver to enable the reset and clocks to init
+the device. Due to Nvidia does not support a mailbox passthrough to
+communicate a VM directly to the BPMP we need to virtualize the BPMP services.
+We have found that the reset and clock transactions are done in the BPMP
+driver with a common function that is called **tegra_bpmp_transfer**. Then,
 to virtualize the BPMP we will virtualize this function.
 
-					    VM		       
-				   +------------------+    
-				   |GPU or UART driver|    
-				   +------------------+    
-					     | Reset/clocks
-					     v	     
-				   +------------------+   
-				   | BPMP guest proxy |   
-				   +------------------+
-					     |
-				  -----------|-----------  
-				  VMM/Qemu   v	     
-				   +------------------+    
-				   |   BPMP VMM guest |    
-				   +------------------+    
-					     |
-				  -----------|-----------  
-    Host			  Host       v	     
-     +------------------+	   +-----------------+    
-     |GPU or UART driver|	   | BPMP host proxy |    
-     +------------------+	   +-----------------+    
-	       | Reset/clocks		     |	     
-	       v			     v	     
-       +--------------+	   	    +--------------+      
-       | BPMP driver  |	   	    | BPMP driver  |      
-       +--------------+	   	    +--------------+      
+                                            VM                      
+                                   +------------------+   
+                                   |GPU or UART driver|   
+                                   +------------------+   
+                                             | Reset/clocks
+                                             v            
+                                   +------------------+  
+                                   | BPMP guest proxy |  
+                                   +------------------+
+                                             |
+                                  -----------|----------- 
+                                  VMM/Qemu   v            
+                                   +------------------+   
+                                   |   BPMP VMM guest |   
+                                   +------------------+   
+                                             |
+                                  -----------|----------- 
+    Host                          Host       v            
+     +------------------+           +-----------------+   
+     |GPU or UART driver|           | BPMP host proxy |   
+     +------------------+           +-----------------+   
+               | Reset/clocks                |            
+               v                             v            
+       +--------------+              +--------------+     
+       | BPMP driver  |              | BPMP driver  |     
+       +--------------+              +--------------+     
 
 
 ## General design assumptions
 
-1. Use the same kernel for guest and host, with the same kernel 
+1. Use the same kernel for guest and host, with the same kernel
    configuration.
 2. Minimal modifications to kernel bpmp source code.
 3. Add another repository for BPMP proxy (host and guest) as kernel overlay.
@@ -52,10 +52,10 @@ to virtualize the BPMP we will virtualize this function.
 
 ### BPMP host proxy
 
-- Runs in the host kernel. It exposes the tegra_bpmp_transfer function to the 
+- Runs in the host kernel. It exposes the tegra_bpmp_transfer function to the
   user level via a char device "/dev/bpmp-host".
 - Written as a builtin kernel module overlay in this repository.
-- Enabled in the kernel via a "*nvidia,bpmp-host-proxy*" device tree node on the 
+- Enabled in the kernel via a "*nvidia,bpmp-host-proxy*" device tree node on the
   host device tree.
 - In the "nvidia,bpmp-host-proxy" device tree node define the clocks and resets
   that will be allowed to be used by the VMs.
@@ -67,12 +67,12 @@ to virtualize the BPMP we will virtualize this function.
 - Communicates the BPMP-host to the BPMP-guest through a IOMEM in the VMM/Qemu.
 - Compile Qemu with additions and install it on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
-  Alternatively you can use 
+  Alternatively you can use
 
 
 ### BPMP guest proxy
 
-- Runs in the guest kernel. It intercepts tegra_bpmp_transfer call and routes 
+- Runs in the guest kernel. It intercepts tegra_bpmp_transfer call and routes
   the request through proxies to the host kernel driver.
 - Written as a builtin kernel module overlay in this repository.
 - Enable it with the "*virtual-pa*" property in the bpmp node in the guest device tree
@@ -85,11 +85,11 @@ to virtualize the BPMP we will virtualize this function.
 The BPMP driver has small modifications intended to:
 - Intercepts the tegra_bpmp_transfer function to use the tegra_bpmp_transfer_redirect
   from the BPMP guest.
-- Reads the *virtual-pa* property from the guest device tree to pass the BPMP VMM guest 
+- Reads the *virtual-pa* property from the guest device tree to pass the BPMP VMM guest
   VPA to the BPMP guest proxy module.
 
-Modifications to the BPMP driver are included in a patch for NVIDIA kernel-5.10 with tag 
-jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git 
+Modifications to the BPMP driver are included in a patch for NVIDIA kernel-5.10 with tag
+jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
 
     kernel-5.10_bpmp-virt.patch
 
@@ -97,14 +97,14 @@ jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
 
 1. Create a development environment with Ubuntu 20.04 on your Nvidia Orin.
 
-2. Download the Nvidia L4T Driver Package (BSP) version 35.3.1 from (also 
+2. Download the Nvidia L4T Driver Package (BSP) version 35.3.1 from (also
    tested with version 35.2.1):
-	
+
 	https://developer.nvidia.com/embedded/jetson-linux-r3531
 
 3. Extract the Nvidia L4T Driver Package (BSP):
 
-	tar -xvf Jetson_Linux_R35.3.1_aarch64.tbz2 
+	tar -xvf Jetson_Linux_R35.3.1_aarch64.tbz2
 
 4. Sync the source code to the tag *jetson_35.3.1*
 
@@ -119,15 +119,15 @@ jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
 6. Apply the patch from this repo with:
 
 	git -C kernel-5.10/ apply ../bpmp-virt/kernel-5.10_bpmp-virt.patch
-    
+   
 
-7. NOTE that the bpmp-virt kernel overlay is added by the patch. The line 
+7. NOTE that the bpmp-virt kernel overlay is added by the patch. The line
    "bpmp-virt" has been added to the files.
 
 	kernel-5.10/kernel-int-overlays.txt
-	kernel-5.10/kernel-overlays.txt 
+	kernel-5.10/kernel-overlays.txt
 
-8. Check that the following configuration lines were added by the patch to 
+8. Check that the following configuration lines were added by the patch to
    kernel-5.10/arch/arm64/configs/defconfig
 
 	CONFIG_VFIO=y
@@ -144,7 +144,7 @@ jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
 
     You will find the compiled kernel image in:
 
-	kernel_out/arch/arm64/boot/Image 
+	kernel_out/arch/arm64/boot/Image
 
     **IMPORTANT NOTE:** use this same image for both host and kernel.
 
@@ -154,7 +154,7 @@ jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
 This instructions describes the modifications on the device tree to passthrough
 the UARTA that is BPMP dependent
 
-1. For the host, modify the uarta node in Linux_for_Tegra/sources/hardware/ 
+1. For the host, modify the uarta node in Linux_for_Tegra/sources/hardware/
    nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-uart.dtsi
    with this content:
 
@@ -213,20 +213,20 @@ the UARTA that is BPMP dependent
 
 	bpmp_host_proxy: bpmp_host_proxy {
 	    compatible = "nvidia,bpmp-host-proxy";
-	    allowed-clocks = <TEGRA234_CLK_UARTA 
+	    allowed-clocks = <TEGRA234_CLK_UARTA
 			    TEGRA234_CLK_PLLP_OUT0>;
-	    allowed-resets = <TEGRA234_RESET_UARTA>;				  
+	    allowed-resets = <TEGRA234_RESET_UARTA>;				 
 	    status = "okay";
 	};
 
-    With this configuration we enable the bpmp-host in the host. Also, here 
-    we inform to the bpmp-host which are the allowed resources (clocks and 
+    With this configuration we enable the bpmp-host in the host. Also, here
+    we inform to the bpmp-host which are the allowed resources (clocks and
     resets) that can be used by the VMs. Copy these resources from the device
     tree node of the devices that you will passthrough.
 
 5. If it is not already there, remember to add the interrupts configurations to the
    node "*intc: interrupt-controller@f400000*" in the file Linux_for_Tegra/sources/
-   hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-minimal.dtsi 
+   hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-minimal.dtsi
 
 		interrupts = <GIC_PPI 9
 			(GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
@@ -241,7 +241,7 @@ the UARTA that is BPMP dependent
 
 	kernel_out/arch/arm64/boot/dts/nvidia/tegra234-p3701-0000-p3737-0000.dtb
 
-7. Copy kernel Image and tegra234-p3701-0000-p3737-0000.dtb files to the appropriate 
+7. Copy kernel Image and tegra234-p3701-0000-p3737-0000.dtb files to the appropriate
    locations defined in /boot/extlinux/extlinux.conf
 
 8. Extract and edit guests Device Tree
@@ -256,7 +256,7 @@ the UARTA that is BPMP dependent
 
 	Now you can edit the guest Device Tree uarta-qemu-8.1.0.dts.
 
-9. Amendments in steps 10 - 11 to guest's Device Tree are alternatively available in 
+9. Amendments in steps 10 - 11 to guest's Device Tree are alternatively available in
    the patch file
 
 	guest-dts_bpmp-virt.patch
@@ -265,8 +265,8 @@ the UARTA that is BPMP dependent
    adjust names or patchfile accordingly. Alternatively do the steps 9 - 10.
 
 
-10. To the guest's device tree root, add the VPA address property (virtual-pa) into the 
-    bpmp node for the the Qemu bpmp guest 
+10. To the guest's device tree root, add the VPA address property (virtual-pa) into the
+    bpmp node for the the Qemu bpmp guest
 
 	nvim uarta-qemu-8.1.0.dts
 
@@ -274,13 +274,13 @@ the UARTA that is BPMP dependent
 
 	bpmp: bpmp {
 	    compatible = "nvidia,tegra234-bpmp", "nvidia,tegra186-bpmp";
-	    virtual-pa = <0x0 0x090c0000>; 
+	    virtual-pa = <0x0 0x090c0000>;
 	    #clock-cells = <1>;
 	    #reset-cells = <1>;
 	    status = "okay";
 	};
 
-    Here you define to the bpmp-guest the address of the VPA (virtual-pa), that in 
+    Here you define to the bpmp-guest the address of the VPA (virtual-pa), that in
     this case is 0x090c0000
 
 11. For UARTA passthrough you will need to add the *uarta* node to the guest DT.
@@ -309,7 +309,7 @@ the UARTA that is BPMP dependent
 			status = "okay";
 		    };
 
-	Also, you will need to add the alias for the uarta node. This code must be inserted 
+	Also, you will need to add the alias for the uarta node. This code must be inserted
 	after the uarta definition. For instance at the end of the root block
 
 		aliases {
@@ -318,7 +318,7 @@ the UARTA that is BPMP dependent
 
 12. Compile the ammended guest Device Tree
 
-		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb 
+		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb
 
 13.	Also, you will need to allow the unsafe interrupts
 	Either type as sudo:
@@ -338,7 +338,7 @@ the UARTA that is BPMP dependent
 
 		'modinfo vfio_iommu_type1'
 
-14. Finally you can run your VM 
+14. Finally you can run your VM
 	Use the following environment variables and Qemu command
 	Qemu monitor will be on pty, VM console will be in the startup terminal:
 
@@ -365,8 +365,8 @@ the UARTA that is BPMP dependent
 
 	echo 123 > /dev/ttyTHS0
 
-    The UARTA (or UART1 in the full package) in the Nvidia Jetson Orin AGX is 
-    connected to the external  40-pin connector. You can connect a USB to UART 
+    The UARTA (or UART1 in the full package) in the Nvidia Jetson Orin AGX is
+    connected to the external  40-pin connector. You can connect a USB to UART
     as follows (the number 1 pin is top right):
 
 	Nvidia Orin AGX      USB to UART
@@ -380,4 +380,4 @@ the UARTA that is BPMP dependent
     terminal:
 
 	picocom -b 9600 /dev/ttyUSB0
-    
+   
