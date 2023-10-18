@@ -36,9 +36,9 @@ to virtualize the BPMP we will virtualize this function.
      +------------------+	   +-----------------+    
 	       | Reset/clocks		     |	     
 	       v			     v	     
-       +--------------+		     +--------------+      
-       | BPMP driver  |		     | BPMP driver  |      
-       +--------------+		     +--------------+      
+       +--------------+	   	    +--------------+      
+       | BPMP driver  |	   	    | BPMP driver  |      
+       +--------------+	   	    +--------------+      
 
 
 ## General design assumptions
