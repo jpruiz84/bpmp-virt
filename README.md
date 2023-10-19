@@ -338,7 +338,7 @@ the UARTA that is BPMP dependent
 
 	or with
 
-		'modinfo vfio_iommu_type1'
+		modinfo vfio_iommu_type1
 
 14. Finally you can run your VM. Use the following environment variables and Qemu command. 
     Qemu monitor will be on pty, VM console will be in the startup terminal:
