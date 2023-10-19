@@ -89,8 +89,8 @@ The BPMP driver has small modifications intended to:
 - Reads the *virtual-pa* property from the guest device tree to pass the BPMP VMM 
   guest VPA to the BPMP guest proxy module.
 
-Modifications to the BPMP driver are included in a patch for NVIDIA kernel-5.10 with 
-tag jetson_35.3.1 available on https://github.com/KimGSandstrom/bpmp-virt.git
+Modifications to the BPMP driver are included in a patch against NVIDIA kernel-5.10 with 
+tag jetson_35.3.1
 
 		kernel-5.10_bpmp-virt.patch
 
@@ -182,11 +182,10 @@ the UARTA that is BPMP dependent
     Also, this configuration disables the default nvidia,tegra194-hsuart driver
     by replacing it with a dummy driver.
 
-2. Steps 3 - 4 below are also availabe in the patch file.
+2. Steps 3 - 4 below are also availabe in the patch file host-dtsi_bpmp-virt.patch.
 
-		host-dtsi_bpmp-virt.patch
-
-   in https://github.com/KimGSandstrom/bpmp-virt.git
+		cd Linux_for_Tegra/sources/hardware/nvidia/soc/t23x/
+		patch -p1 </path_to/host-dtsi_bpmp-virt.patch
 
 3. For the host add the bpmp_host_proxy node to Linux_for_Tegra/sources/
    hardware/nvidia/soc/t23x/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
@@ -259,9 +258,9 @@ the UARTA that is BPMP dependent
 	Now you can edit the guest Device Tree uarta-qemu-8.1.0.dts.
 
 9. Amendments in steps 10 - 11 to guest's Device Tree are alternatively available in
-   the patch file
+   the patch file 'guest-dts_bpmp-virt.patch'
 
-		guest-dts_bpmp-virt.patch
+		patch -p0 <guest-dts_bpmp-virt.patch -o uarta-qemu-8.1.0.dts
 
    Note the the patch file is for files named 'virt-qemu-8.1.0.dts' and 
    'uarta-qemu-8.1.0.dts'. Adjust names or patchfile accordingly. Alternatively do the 
@@ -341,9 +340,8 @@ the UARTA that is BPMP dependent
 
 		'modinfo vfio_iommu_type1'
 
-14. Finally you can run your VM
-	Use the following environment variables and Qemu command
-	Qemu monitor will be on pty, VM console will be in the startup terminal:
+14. Finally you can run your VM. Use the following environment variables and Qemu command. 
+    Qemu monitor will be on pty, VM console will be in the startup terminal:
 
 		rootfs="tegra_rootfs.qcow2"
 		kernel=Image
@@ -375,7 +373,7 @@ the UARTA that is BPMP dependent
 		Nvidia Orin AGX      USB to UART
 		40 pin connector       cable
 		----------------------------------
-		6  (GND)	      Black (GND)
+		6  (GND)	 Black (GND)
 		8  (UART1_TX)	 Yellow (RX)
 		10 (UART1_RX)	 Orange (TX)
 
