@@ -35,6 +35,8 @@
     }
   ];
 
+  boot.kernelParams = [ "vfio_iommu_type1.allow_unsafe_interrupts=1" ];
+
   systemd.services.bindUARTA = {
     description = "Bind UARTA to the vfio-platform driver";
     wantedBy = ["multi-user.target"];
@@ -45,16 +47,6 @@
         ${pkgs.bash}/bin/bash -c "echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override"
         ${pkgs.bash}/bin/bash -c "echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind"
       '';
-    };
-  };
-
-  systemd.services.allowUnsafeInterrupts = {
-    description = "Allow unsafe interrupts for vfio";
-    wantedBy = ["multi-user.target"];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = "yes";
-      ExecStart = "${pkgs.bash}/bin/bash -c 'echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts'";
     };
   };
 }
