@@ -339,6 +339,17 @@ the UARTA that is BPMP dependent
 	or with
 
 		modinfo vfio_iommu_type1
+	
+	You need to bind the uarta serial port to vfio-platform
+
+		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
+		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
+
+	You can check if binding is successful with:
+
+		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
+	
+	A symbolic link should be present.
 
 14. Finally you can run your VM. Use the following environment variables and Qemu command. 
     Qemu monitor will be on pty, VM console will be in the startup terminal:
