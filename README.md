@@ -323,20 +323,20 @@ the UARTA that is BPMP dependent
 		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb
 
 13.	Also, you will need to allow the unsafe interrupts
-	Either type as sudo:
+	Either type as sudo
 
 		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-	Or add this kernel boot parameter in /boot/extlinux/extlinux.conf
+	or add this kernel boot parameter in /boot/extlinux/extlinux.conf
 
 		vfio_iommu_type1.allow_unsafe_interrupts=1
 
 	After reboot, you can check the status with
 
-		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts Or with 'modinfo vfio_iommu_type1'
+		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-	Or with
+	or with
 
 		'modinfo vfio_iommu_type1'
 
