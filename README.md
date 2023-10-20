@@ -304,47 +304,47 @@ the UARTA that is BPMP dependent
 			status = "okay";
 		    };
 
-  Also, you will need to add the alias for the uarta node. This code must be inserted
-  after the uarta definition. For instance at the end of the root block
+   Also, you will need to add the alias for the uarta node. This code must be inserted
+   after the uarta definition. For instance at the end of the root block
 
 		aliases {
 		  serial0 = &uarta;
 		};
 
-  Note again that steps 8 -9 are available as a patchfile described in step 7.
+   Note again that steps 8 -9 are available as a patchfile described in step 7.
 
 10. Compile the amended guest Device Tree
 
 		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb
 
 11.  Also, you will need to allow unsafe interrupts
-	Either type as sudo
+     Either type as sudo
 
 		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-	or add this kernel boot parameter in /boot/extlinux/extlinux.conf
+     or add this kernel boot parameter in /boot/extlinux/extlinux.conf
 
 		vfio_iommu_type1.allow_unsafe_interrupts=1
 
-	After reboot, you can check the status with
+     After reboot, you can check the status with
 
 		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-	or with
+     or with
 
 		modinfo vfio_iommu_type1
 	
-	You need to bind the uarta serial port to vfio-platform
+     You need to bind the uarta serial port to vfio-platform
 
 		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
 		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
 
-	You can check if binding is successful with:
+     You can check if binding is successful with:
 
 		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
 	
-	A symbolic link should be present.
+     A symbolic link should be present.
 
 12. Finally you can run your VM. Use the following environment variables and Qemu command. 
     Qemu monitor will be on pty, VM console will be in the startup terminal:
@@ -364,8 +364,7 @@ the UARTA that is BPMP dependent
 		    -device vfio-platform,host=3100000.serial \
 		    -drive file=${rootfs},if=virtio,format=qcow2 \
 		    -net user,hostfwd=tcp::2222-:22 -net nic \
-		    -chardev pty,id=mon0 \
-		    -mon chardev=mon0,mode=readline
+		    -chardev pty,id=mon0 \		    -mon chardev=mon0,mode=readline
 
 13. To test the UARTA you can send a *"123"* string with this command from
     the VM:
