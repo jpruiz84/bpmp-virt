@@ -48,7 +48,7 @@ to virtualize the BPMP we will virtualize this function.
 2. Minimal modifications to kernel bpmp source code.
 3. Add another repository for BPMP proxy (host and guest) as kernel overlay.
    This repository with this README.md is a fork of such previous work.
-   Specificly, https://github.com/jpruiz84/bpmp-virt has been forked to this 
+   Specificly, https://github.com/jpruiz84/bpmp-virt has been forked to this
    repository.
 
 ### BPMP host proxy
@@ -68,10 +68,12 @@ to virtualize the BPMP we will virtualize this function.
 - Communicates the BPMP-host to the BPMP-guest through a IOMEM in the VMM/Qemu.
 - Compile Qemu with patched additions and install Qemu on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
-  Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git. 
-  You can also use the code from the official Qemu repository and patch the code with
+  Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git.
+  You can also use the code from the official Qemu repository and patch the code:
 
-  		0008-bpmp-guest-proxy-dts.patch
+        git clone https://gitlab.com/qemu-project/qemu.git
+        cd qemu
+        patch -p1 < 0009-qemu-v8.1.0_bpmp-virt.patch
 
 ### BPMP guest proxy
 
