@@ -1,0 +1,18 @@
+diff --git a/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi b/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
+index 1cf75f2..9d72c60 100644
+--- a/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
++++ b/kernel-dts/tegra234-soc/tegra234-soc-base.dtsi
+@@ -339,6 +339,13 @@
+ 		};
+ 	};
+ #endif
++	bpmp_host_proxy: bpmp_host_proxy {
++		compatible = "nvidia,bpmp-host-proxy";
++		allowed-clocks = <TEGRA234_CLK_UARTA 
++				TEGRA234_CLK_PLLP_OUT0>;
++		allowed-resets = <TEGRA234_RESET_UARTA>;				  
++		status = "okay";
++	};
+ 
+ 	nvrng@3ae0000 {
+ 		compatible = "nvidia,tegra234-se-nvrng";
