@@ -66,10 +66,9 @@ to virtualize the BPMP we will virtualize this function.
 ### BPMP VMM guest
 
 - Communicates the BPMP-host to the BPMP-guest through a IOMEM in the VMM/Qemu.
-- Compile Qemu with additions and install it on host.
+- Compile Qemu with patched additions and install Qemu on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
-  Alternatively you can use
-
+  Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git 
 
 ### BPMP guest proxy
 
@@ -238,7 +237,9 @@ the UARTA that is BPMP dependent
 		kernel_out/arch/arm64/boot/dts/nvidia/tegra234-p3701-0000-p3737-0000.dtb
 
 5. Copy kernel Image and tegra234-p3701-0000-p3737-0000.dtb files to the appropriate
-   locations defined in /boot/extlinux/extlinux.conf
+   locations defined in
+
+		/boot/extlinux/extlinux.conf
 
 6. Start setting up the guest. Extract and edit guests Device Tree
 	Dump the guests Device Tree from Qemu:
