@@ -68,7 +68,10 @@ to virtualize the BPMP we will virtualize this function.
 - Communicates the BPMP-host to the BPMP-guest through a IOMEM in the VMM/Qemu.
 - Compile Qemu with patched additions and install Qemu on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
-  Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git 
+  Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git. 
+  You can also use the code from the official Qemu repository and patch the code with
+
+  		0008-bpmp-guest-proxy-dts.patch
 
 ### BPMP guest proxy
 
@@ -320,25 +323,25 @@ the UARTA that is BPMP dependent
 11.  Also, you will need to allow unsafe interrupts
      Either type as sudo
 
-		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
-			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+     		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+     			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
      or add this kernel boot parameter in /boot/extlinux/extlinux.conf
 
-		vfio_iommu_type1.allow_unsafe_interrupts=1
+     		vfio_iommu_type1.allow_unsafe_interrupts=1
 
      After reboot, you can check the status with
 
-		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+     		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
      or with
 
-		modinfo vfio_iommu_type1
+     		modinfo vfio_iommu_type1
 	
      You need to bind the uarta serial port to vfio-platform
 
-		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
-		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
+     		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
+     		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
 
      You can check if binding is successful with:
 
