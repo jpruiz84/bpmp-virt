@@ -345,7 +345,7 @@ the UARTA that is BPMP dependent
 
      You can check if binding is successful with:
 
-		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
+     		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
 	
      A symbolic link should be present.
 
