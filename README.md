@@ -13,32 +13,32 @@ We have found that the reset and clock transactions are done in the BPMP
 driver with a common function that is called **tegra_bpmp_transfer**. Then,
 to virtualize the BPMP we will virtualize this function.
 
-                                            VM                      
-                                   +------------------+   
-                                   |GPU or UART driver|   
-                                   +------------------+   
+                                            VM
+                                   +------------------+
+                                   |GPU or UART driver|
+                                   +------------------+
                                              | Reset/clocks
-                                             v            
-                                   +------------------+  
-                                   | BPMP guest proxy |  
+                                             v
+                                   +------------------+
+                                   | BPMP guest proxy |
                                    +------------------+
                                              |
-                                  -----------|----------- 
-                                  VMM/Qemu   v            
-                                   +------------------+   
-                                   |   BPMP VMM guest |   
-                                   +------------------+   
+                                  -----------|-----------
+                                  VMM/Qemu   v
+                                   +------------------+
+                                   |   BPMP VMM guest |
+                                   +------------------+
                                              |
-                                  -----------|----------- 
-    Host                          Host       v            
-     +------------------+           +-----------------+   
-     |GPU or UART driver|           | BPMP host proxy |   
-     +------------------+           +-----------------+   
-               | Reset/clocks                |            
-               v                             v            
-       +--------------+              +--------------+     
-       | BPMP driver  |              | BPMP driver  |     
-       +--------------+              +--------------+     
+                                  -----------|-----------
+    Host                          Host       v
+     +------------------+           +-----------------+
+     |GPU or UART driver|           | BPMP host proxy |
+     +------------------+           +-----------------+
+               | Reset/clocks                |
+               v                             v
+       +--------------+              +--------------+
+       | BPMP driver  |              | BPMP driver  |
+       +--------------+              +--------------+
 
 
 ## General design assumptions
@@ -124,7 +124,7 @@ tag jetson_35.3.1
 			../bpmp-virt/0002-vfio_platform-reset-required-false.patch \
 			../bpmp-virt/0003-bpmp-support-bpmp-virt.patch
 			../bpmp-virt/0007-bpmp-overlay.patch
-	
+
 	Applying the '0002-vfio_platform-reset-required-false.patch' is redundant 
 	if kernel boot parameters are set as described below
 
@@ -232,8 +232,8 @@ the UARTA that is BPMP dependent
 
 4. Compile the device tree with the command:
 
-		cd Linux_for_Tegra/sources/kernel
-		make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 dtbs
+ 		cd Linux_for_Tegra/sources/kernel
+ 		make -C kernel-5.10/ ARCH=arm64 O=../kernel_out -j12 dtbs
 
 	You will find the compiled device tree for Nvidia Jetson Orin AGX host on:
 
@@ -261,8 +261,8 @@ the UARTA that is BPMP dependent
 
 		patch -p0 < 0008-bpmp-guest-proxy-dts.patch -o uarta-qemu-8.1.0.dts
 
-   Note that the patch file is for files named 'virt-qemu-8.1.0.dts' and 
-   'uarta-qemu-8.1.0.dts'. Adjust names or patchfile accordingly.
+    Note that the patch file is for files named 'virt-qemu-8.1.0.dts' and 
+    'uarta-qemu-8.1.0.dts'. Adjust names or patch file accordingly.
 
 8. Edit the Qemu guest's device tree.
 
@@ -307,47 +307,46 @@ the UARTA that is BPMP dependent
 			status = "okay";
 		    };
 
-   Also, you will need to add the alias for the uarta node. This code must be inserted
-   after the uarta definition. For instance at the end of the root block
+    Also, you will need to add the alias for the uarta node. This code must be inserted 
+    after the uarta definition. For instance at the end of the root block
 
 		aliases {
 		  serial0 = &uarta;
 		};
 
-   Note again that steps 8 -9 are available as a patchfile described in step 7.
+    Note again that steps 8 -9 are available as a patch file described in step 7.
 
 10. Compile the amended guest Device Tree
 
 		dtc -Idts -Odtb uarta-qemu-8.1.0.dts -o uarta-qemu-8.1.0.dtb
 
-11.  Also, you will need to allow unsafe interrupts
-     Either type as sudo
+11. Also, you will need to allow unsafe interrupts
+	Either type as sudo
 
-     		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
-     			cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+		echo 1 > /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-     or add this kernel boot parameter in /boot/extlinux/extlinux.conf
+	or add this kernel boot parameter in /boot/extlinux/extlinux.conf
 
-     		vfio_iommu_type1.allow_unsafe_interrupts=1
+		vfio_iommu_type1.allow_unsafe_interrupts=1
 
-     After reboot, you can check the status with
+	After reboot, you can check the status with
 
-     		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
+		cat /sys/module/vfio_iommu_type1/parameters/allow_unsafe_interrupts
 
-     or with
+	or with
 
-     		modinfo vfio_iommu_type1
-	
-     You need to bind the uarta serial port to vfio-platform
+		modinfo vfio_iommu_type1
 
-     		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
-     		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
+	You need to bind the uarta serial port to vfio-platform
 
-     You can check if binding is successful with:
+		echo vfio-platform > /sys/bus/platform/devices/3100000.serial/driver_override
+		echo 3100000.serial > /sys/bus/platform/drivers/vfio-platform/bind
 
-     		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
-	
-     A symbolic link should be present.
+	You can check if binding is successful with:
+
+		ls -l /sys/bus/platform/drivers/vfio-platform/3100000.serial
+
+    A symbolic link should be present.
 
 12. Finally you can run your VM. Use the following environment variables and Qemu command. 
     Qemu monitor will be on pty, VM console will be in the startup terminal:
@@ -389,4 +388,3 @@ the UARTA that is BPMP dependent
     terminal:
 
 		picocom -b 9600 /dev/ttyUSB0
-   
