@@ -69,7 +69,8 @@ to virtualize the BPMP we will virtualize this function.
 - Compile Qemu with patched additions and install Qemu on host.
   The code is available in: https://github.com/vadika/qemu-bpmp/tree/v7.2.0-bpmp
   Alternatively you can use the 8.1.0 version in https://github.com/KimGSandstrom/qemu-bpmp.git.
-  You can also use the code from the official Qemu repository and patch the code:
+  You can also use the code from the official Qemu repository and patch the code. The patch 
+  contains ./configure.sh for suggested ./confugure paramters
 
         git clone https://gitlab.com/qemu-project/qemu.git
         cd qemu
