@@ -8,11 +8,11 @@ index 0000000000..6cd9f77b77
 +# Short intstructions:
 +
 +
-+1. git clone https://github.com/vadika/qemu-bpmp/
-+2. git checkout -b v7.2.0-bpmp
-+3. $ cd qemu
-+   $ ./configure --target-list=aarm64-softmmu
-+   $ make -j12
++1. git clone https://gitlab.com/qemu-project/qemu.git
++2  cd qemu
++3  git checkout -b v8.1.0
++4 ./configure --target-list=aarm64-softmmu
++5  make -j12
 +
 +
 +
