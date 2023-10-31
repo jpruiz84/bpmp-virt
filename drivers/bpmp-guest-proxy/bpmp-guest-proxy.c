@@ -298,12 +298,18 @@ int my_tegra_bpmp_transfer(struct tegra_bpmp *bpmp, struct tegra_bpmp_message *m
 {   
 
 	unsigned char io_buffer[MEM_SIZE];
+	size_t org_tx_size = 0;
+	size_t org_rx_size = 0;
+
 	deb_info("%s\n", __func__);
 
 	memset(io_buffer, 0, sizeof(io_buffer));
-	
+
     if (msg->tx.size >= MESSAGE_SIZE)
-        return -EINVAL;
+		return -EINVAL;
+
+	org_tx_size = msg->tx.size;
+	org_rx_size = msg->rx.size;
 
 	// Copy msg, tx data and rx data to a single io_buffer
     memcpy(&io_buffer[TX_BUF], msg->tx.data, msg->tx.size);
@@ -328,10 +334,23 @@ int my_tegra_bpmp_transfer(struct tegra_bpmp *bpmp, struct tegra_bpmp_message *m
 
 	// Copy from io_buffer to msg, tx data and rx data
 	memcpy(&msg->tx.size, &io_buffer[TX_SIZ], sizeof(msg->tx.size));
-    memcpy((void *)msg->tx.data, &io_buffer[TX_BUF], msg->tx.size);
-
 	memcpy(&msg->rx.size, &io_buffer[RX_SIZ], sizeof(msg->rx.size));
-	memcpy(msg->rx.data, &io_buffer[RX_BUF], msg->rx.size);
+	
+	// If new msg->tx/rx.size is greater than the original msg->tx/rx.size, 
+	// use the original because it is the max size of the destination buffer.
+	if(msg->tx.size > org_tx_size)
+		msg->tx.size = org_tx_size;
+
+	if(msg->rx.size > org_rx_size)
+		msg->rx.size = org_rx_size;
+
+	// Do not return error if buffers not defined, because for some cases
+	// the BPMP communicates with empty buffer
+	if(msg->tx.data)
+		memcpy((void *)msg->tx.data, &io_buffer[TX_BUF], msg->tx.size);
+
+	if(msg->rx.data)
+		memcpy(msg->rx.data, &io_buffer[RX_BUF], msg->rx.size);
 	
 	memcpy(&msg->rx.ret, &io_buffer[RET_COD], sizeof(msg->rx.ret));
 
