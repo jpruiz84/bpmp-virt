@@ -27,6 +27,19 @@ MODULE_VERSION("0.1");						 ///< A version number to inform users
 
 #define BPMP_HOST_VERBOSE    0
 
+/**
+ * Put this flag in 0 in order that the BPMP host proxy only allows
+ * the allowed BPMP resources to be used by the VMs.
+ * 
+ * Put this flag in 1 in order that the BPMP host proxy allows
+ * all the BPMP resources to be accessible by the virtual machines.
+ * This option is useful for debugging, but is INSECURE, and it could
+ * stop the host. To avoid stop the host use 
+ * "clk_ignore_unused pd_ignore_unused" in kernel command line
+ * 
+*/
+#define BPMP_HOST_ALLOWS_ALL   0
+
 #if BPMP_HOST_VERBOSE
 #define deb_info(...)     printk(KERN_INFO DEVICE_NAME ": "__VA_ARGS__)
 #else
@@ -34,6 +47,7 @@ MODULE_VERSION("0.1");						 ///< A version number to inform users
 #endif
 
 #define deb_error(...)    printk(KERN_ALERT DEVICE_NAME ": "__VA_ARGS__)
+#define deb_warn(...)     printk(KERN_WARNING DEVICE_NAME ": "__VA_ARGS__)
 
 /**
  * Important variables that store data and keep track of relevant information.
@@ -163,12 +177,12 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 	
 	deb_info("%s, installing module.", __func__);
 
-	// Read allowed clocks and reset from the device tree
-	// if clocks or resets are not defined, not initialize the module
+	// Read allowed clocks and resets from the device tree
+	// if they are defined or BPMP_HOST_ALLOWS_ALL continue
 	bpmp_ares.clocks_size = of_property_read_variable_u32_array(pdev->dev.of_node, 
 		"allowed-clocks", bpmp_ares.clock, 0, BPMP_HOST_MAX_CLOCKS_SIZE);
 
-	if(bpmp_ares.clocks_size <= 0){
+	if(!bpmp_ares.clocks_size && !BPMP_HOST_ALLOWS_ALL){
 		deb_error("No allowed clocks defined");
 		return EINVAL;
 	}
@@ -181,7 +195,7 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 	bpmp_ares.resets_size = of_property_read_variable_u32_array(pdev->dev.of_node, 
 		"allowed-resets", bpmp_ares.reset, 0, BPMP_HOST_MAX_RESETS_SIZE);
 
-	if(bpmp_ares.resets_size <= 0){
+	if(!bpmp_ares.resets_size && !BPMP_HOST_ALLOWS_ALL){
 		deb_error("No allowed resets defined");
 		return EINVAL;
 	}
@@ -191,6 +205,15 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 		deb_info("bpmp_ares.reset %d", bpmp_ares.reset[i]);
 	}
 
+
+	// Read allowed power domains from the device tree
+	bpmp_ares.pd_size = of_property_read_variable_u32_array(pdev->dev.of_node, 
+		"allowed-power-domains", bpmp_ares.pd, 0, BPMP_HOST_MAX_POWER_DOMAINS_SIZE);
+
+	deb_info("bpmp_ares.pd_size: %d", bpmp_ares.pd_size);
+	for (i = 0; i < bpmp_ares.pd_size; i++)	{
+		deb_info("bpmp_ares.pd %d", bpmp_ares.pd[i]);
+	}
 
 	// Allocate a major number for the device.
 	major_number = register_chrdev(0, DEVICE_NAME, &fops);
@@ -278,14 +301,21 @@ static bool check_if_allowed(struct tegra_bpmp_message *msg)
 {
 	struct mrq_reset_request *reset_req = NULL;
 	struct mrq_clk_request *clock_req = NULL;
+	struct mrq_pg_request *pg_req = NULL;
 	uint32_t clk_cmd = 0;
 	int i = 0;
 
-	// Allow get information mrq
+	// Allow get information, DVFS, ISO Client and bandwidth mrqs
 	if(msg->mrq == MRQ_PING ||
 	   msg->mrq == MRQ_QUERY_TAG ||
 	   msg->mrq == MRQ_THREADED_PING ||
 	   msg->mrq == MRQ_QUERY_ABI ||
+	   msg->mrq == MRQ_DEBUG ||
+	   msg->mrq == MRQ_EMC_DVFS_LATENCY ||
+	   msg->mrq == MRQ_EMC_DVFS_EMCHUB ||
+	   msg->mrq == MRQ_ISO_CLIENT ||
+	   msg->mrq == MRQ_STRAP ||
+	   msg->mrq == MRQ_BWMGR || 
 	   msg->mrq == MRQ_QUERY_FW_TAG ){
 		return true;
 	}
@@ -299,7 +329,7 @@ static bool check_if_allowed(struct tegra_bpmp_message *msg)
 				return true;
 			}
 		}
-		deb_error("Error, reset not allowed for: %d", reset_req->reset_id);
+		deb_warn("Warning, reset not allowed for: %d", reset_req->reset_id);
 		return false;
 	}
 	else if (msg->mrq == MRQ_CLK){
@@ -321,12 +351,32 @@ static bool check_if_allowed(struct tegra_bpmp_message *msg)
 			return true;
 		}
 
-		deb_error("Error, clock not allowed for: %d, with command: %d", 
+		deb_warn("Warning, clock not allowed for: %d, with command: %d", 
 			clock_req->cmd_and_id & 0x0FFF, clk_cmd);
 		return false;
 	}
+	else if(msg->mrq == MRQ_PG){
+		pg_req = (struct mrq_pg_request*) msg->tx.data;
 
-	deb_error("Error, msg->mrq %d not allowed", msg->mrq);
+		for(i = 0; i < bpmp_ares.pd_size; i++){
+			if(bpmp_ares.pd[i] == pg_req->id){
+				return true;
+			}
+		}
+		
+		// If there is a get info command, allow it no matters the ID
+		if(pg_req->cmd == CMD_PG_GET_STATE ||
+		   pg_req->cmd == CMD_PG_GET_NAME ||
+		   pg_req->cmd == CMD_PG_GET_MAX_ID){
+			return true;
+		}
+
+		deb_warn("Warning, pg not allowed for: %d, with command: %d", 
+			pg_req->id, pg_req->cmd);
+		return false;
+	}
+
+	deb_warn("Warning, msg->mrq %d not allowed", msg->mrq);
 
 	return false;
 }
@@ -356,9 +406,6 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 		goto out_nomem;
 	}
 
-	deb_info("wants to write %zu bytes\n", len);
-
-
 	ret = -ENOMEM;
 	kbuf = kmalloc(len, GFP_KERNEL);
 
@@ -375,6 +422,8 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 		deb_error("copy_from_user(1) failed\n");
 		goto out_cfu;
 	}
+
+	deb_info("\nwants to write %zu bytes, with mrq: %d\n", len, kbuf->mrq);
 
 	if(kbuf->tx.size > 0){
 		txbuf = kmalloc(BUF_SIZE, GFP_KERNEL);
@@ -405,17 +454,18 @@ static ssize_t write(struct file *filep, const char *buffer, size_t len, loff_t 
 	kbuf->tx.data = txbuf; //reassing to kernel space buffers
 	kbuf->rx.data = rxbuf;
 
-	hexDump (DEVICE_NAME ": kbuf", kbuf, len);
-	hexDump (DEVICE_NAME ": txbuf", txbuf, kbuf->tx.size);
-
 	if(!tegra_bpmp_host_device){
 		deb_error("host device not initialised, can't do transfer!");
 		return -EFAULT;
 	}
 
-	if(!check_if_allowed(kbuf)){
+	// Only continue if allowed or BPMP_HOST_ALLOWS_ALL
+	if(!check_if_allowed(kbuf) && !BPMP_HOST_ALLOWS_ALL){
 		goto out_cfu;
 	}
+
+	hexDump (DEVICE_NAME ": kbuf", kbuf, len);
+	hexDump (DEVICE_NAME ": txbuf", txbuf, kbuf->tx.size);
 
 	ret = tegra_bpmp_transfer(tegra_bpmp_host_device, (struct tegra_bpmp_message *)kbuf);
 
