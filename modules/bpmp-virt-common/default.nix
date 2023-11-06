@@ -5,19 +5,19 @@
   boot.kernelPatches = [
     {
       name = "Added Configurations to Support Vda";
-      patch = ./patches/added-configurations-to-support-vda.patch;
+      patch = ./patches/0001-added-configurations-to-support-vda.patch;
     }
     {
       name = "Vfio_platform Reset Required False";
-      patch = ./patches/vfio_platform-reset-required-false.patch;
+      patch = ./patches/0002-vfio_platform-reset-required-false.patch;
     }
     {
       name = "Bpmp Support Virtualization";
-      patch = ./patches/bpmp-support-bpmp-virt.patch;
+      patch = ./patches/0003-bpmp-support-bpmp-virt.patch;
     }
     {
       name = "Bpmp Virt Drivers";
-      patch = ./patches/bpmp-virt-drivers.patch;
+      patch = ./patches/0004-bpmp-virt-drivers.patch;
     }
   ];
 

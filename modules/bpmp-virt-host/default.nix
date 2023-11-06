@@ -8,7 +8,7 @@
   boot.kernelPatches = [
     {
       name = "Bpmp virtualization host proxy device tree";
-      patch = ./patches/bpmp-host-proxy-dts.patch;
+      patch = ./patches/0001-bpmp-host-proxy-dts.patch;
     }
     # FIXME: This patch doesn't wortk as is.
     # {

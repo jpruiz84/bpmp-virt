@@ -5,7 +5,7 @@
     # FIXME: This patch doesn't apply cleanly
     # {
     #   name = "Bpmp Guest Proxy Dts";
-    #   patch = ./patches/bpmp-guest-proxy-dts.patch;
+    #   patch = ./patches/0001-bpmp-guest-proxy-dts.patch;
     # }
     {
       name = "BPMP virt enable guest";
