@@ -19,6 +19,10 @@
       name = "Bpmp Virt Drivers";
       patch = ./patches/0004-bpmp-virt-drivers.patch;
     }
+    {
+      name = "Bpmp Overlay";
+      patch = ./patches/0005-bpmp-overlay.patch;
+    }
   ];
 
   boot.kernelParams = ["vfio_iommu_type1.allow_unsafe_interrupts=1"];
