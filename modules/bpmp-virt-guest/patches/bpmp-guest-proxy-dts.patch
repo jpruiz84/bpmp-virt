@@ -1,0 +1,66 @@
+*** virt-qemu-8.1.0.dts	2023-10-11 15:43:46.555613714 +0300
+--- uarta-qemu-8.1.0.dts	2023-10-11 16:00:30.382939447 +0300
+***************
+*** 1,5 ****
+--- 1,6 ----
+  /dts-v1/;
+  
++ 
+  / {
+  	interrupt-parent = <0x8002>;
+  	model = "linux,dummy-virt";
+***************
+*** 23,32 ****
+  
+  	platform-bus@c000000 {
+  		interrupt-parent = <0x8002>;
+! 		ranges = <0x00 0x00 0xc000000 0x2000000>;
+  		#address-cells = <0x01>;
+  		#size-cells = <0x01>;
+  		compatible = "qemu,platform\0simple-bus";
+  	};
+  
+  	fw-cfg@9020000 {
+--- 24,46 ----
+  
+  	platform-bus@c000000 {
+  		interrupt-parent = <0x8002>;
+! 		ranges = <0xc000000 0x00 0xc000000 0x2000000>;
+  		#address-cells = <0x01>;
+  		#size-cells = <0x01>;
+  		compatible = "qemu,platform\0simple-bus";
++ 
++ 		uarta: serial@c000000 {
++ 			compatible = "nvidia,tegra194-hsuart";
++ 			reg = <0xc000000 0x10000>;
++ 			interrupts = <0 0x70 0x04>;
++ 			nvidia,memory-clients = <14>;
++ 			clocks = <&bpmp 155U>,
++ 			<&bpmp 102U>;
++ 			clock-names = "serial", "parent";
++ 			resets = <&bpmp 100U>;
++ 			reset-names = "serial";
++ 			status = "okay";
++ 		};
+  	};
+  
+  	fw-cfg@9020000 {
+***************
+*** 387,390 ****
+--- 401,416 ----
+  		rng-seed = <0x4fceeb8d 0x6e35938d 0x35b59814 0xec63e712 0xbead8845 0x16c4983a 0xd49ee22f 0x9e88673f>;
+  		kaslr-seed = <0xb1caa62 0x7afc72b2>;
+  	};
++ 
++ 	bpmp: bpmp {
++ 		compatible = "nvidia,tegra234-bpmp", "nvidia,tegra186-bpmp";
++ 		virtual-pa = <0x0 0x090c0000>; 
++ 		#clock-cells = <1>;
++ 		#reset-cells = <1>;
++ 		status = "okay";
++ 	};
++ 
++ 	aliases {
++ 		serial0=&uarta;
++ 	};
+  };

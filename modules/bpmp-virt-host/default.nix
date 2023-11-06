@@ -1,32 +1,22 @@
 {
-  config,
   lib,
   pkgs,
   ...
 }: {
+  imports = [../bpmp-virt-common];
+
   boot.kernelPatches = [
     {
-      name = "Added Configurations to Support Vda";
-      patch = ./0001-added-configurations-to-support-vda.patch;
+      name = "Bpmp virtualization host proxy device tree";
+      patch = ./patches/bpmp-host-proxy-dts.patch;
     }
+    # FIXME: This patch doesn't wortk as is.
+    # {
+    #   name = "Bpmp virtualization host uarta device tree";
+    #   patch = ./patches/bpmp-host-uarta-dts.patch;
+    # }
     {
-      name = "Vfio_platform Reset Required False";
-      patch = ./0002-vfio_platform-reset-required-false.patch;
-    }
-    {
-      name = "Bpmp Support Virtualization";
-      patch = ./0003-bpmp-support-bpmp-virt.patch;
-    }
-    {
-      name = "Bpmp Virt Drivers";
-      patch = ./0004-bpmp-virt-drivers.patch;
-    }
-    {
-      name = "Bpmp Host Proxy Dts";
-      patch = ./0005-bpmp-host-proxy-dts.patch;
-    }
-    {
-      name = "BPMP virt enable host";
+      name = "Bpmp virtualization host kernel configuration";
       patch = null;
       extraStructuredConfig = with lib.kernel; {
         VFIO_PLATFORM = yes;
@@ -34,8 +24,6 @@
       };
     }
   ];
-
-  boot.kernelParams = [ "vfio_iommu_type1.allow_unsafe_interrupts=1" ];
 
   systemd.services.bindUARTA = {
     description = "Bind UARTA to the vfio-platform driver";
