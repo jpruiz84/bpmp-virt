@@ -1,5 +1,5 @@
-(prev: {
-  qemu_kvm = prev.qemu_kvm.overrideAttrs (prev: {
+(final: prev: {
+  qemu_kvm = prev.qemu_kvm.overrideAttrs (_final: prev: {
     patches =
       prev.patches
       ++ [
