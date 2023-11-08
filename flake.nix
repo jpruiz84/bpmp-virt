@@ -32,10 +32,6 @@
       x86_64-linux
       aarch64-linux
     ];
-
-    utils = systems: flake-utils.lib.eachSystem systems (system: {
-      formatter = nixpkgs.legacyPackages.${system}.flake-utils;
-    });
   in
     flake-utils.lib.eachSystem systems (system: {
       formatter = nixpkgs.legacyPackages.${system}.alejandra;
