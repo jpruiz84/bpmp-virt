@@ -12,7 +12,7 @@
     }
     {
       name = "Bpmp virtualization host uarta device tree";
-      patch = ./patches/bpmp-host-uarta-dts.patch;
+      patch = ./patches/0002-bpmp-host-uarta-dts.patch;
     }
     {
       name = "Bpmp virtualization host kernel configuration";
