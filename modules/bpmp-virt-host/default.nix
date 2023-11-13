@@ -25,6 +25,11 @@
     }
   ];
 
+  environment.systemPackages = with pkgs; [
+    qemu
+    dtc
+  ];
+
   systemd.services.bindUARTA = {
     description = "Bind UARTA to the vfio-platform driver";
     wantedBy = ["multi-user.target"];
