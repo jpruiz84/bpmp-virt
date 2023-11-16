@@ -27,6 +27,9 @@
   environment.systemPackages = with pkgs; [
     qemu
     dtc
+    picocom
+    OVMF
+    git
   ];
 
   systemd.services.bindUARTA = {
