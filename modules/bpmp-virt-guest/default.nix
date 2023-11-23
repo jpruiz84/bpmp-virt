@@ -12,7 +12,7 @@
     }
   ];
 
-  hardware.deviceTree = {
+  hardware.deviceTree = lib.mkForce {
     enable = true;
     name = "bpmp-guest.dtb";
   };
