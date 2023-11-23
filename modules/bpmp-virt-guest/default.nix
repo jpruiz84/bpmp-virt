@@ -2,11 +2,6 @@
   imports = [../bpmp-virt-common];
 
   boot.kernelPatches = [
-    # FIXME: This patch doesn't apply cleanly
-    # {
-    #   name = "Bpmp Guest Proxy Dts";
-    #   patch = ./patches/0001-bpmp-guest-proxy-dts.patch;
-    # }
     {
       name = "BPMP virt enable guest";
       patch = null;
@@ -16,4 +11,9 @@
       };
     }
   ];
+
+  hardware.deviceTree = {
+    enable = true;
+    name = "bpmp-guest.dtb";
+  };
 }
