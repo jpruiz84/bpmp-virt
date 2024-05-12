@@ -204,7 +204,7 @@ int tegra_bpmp_guest_init(void)
 	deb_info("registered correctly with major number %d\n", major_number);
 
 	// Register the device class
-	bpmp_guest_proxy_class = class_create(THIS_MODULE, CLASS_NAME);
+	bpmp_guest_proxy_class = class_create(CLASS_NAME);
 	if (IS_ERR(bpmp_guest_proxy_class))
 	{ // Check for error and clean up if there is
 		unregister_chrdev(major_number, DEVICE_NAME);

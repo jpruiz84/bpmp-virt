@@ -87,38 +87,40 @@ The modifications to the BPMP driver are included in the patch:
     0001-bpmp-support-bpmp-virt.patch
 
 
-# Installation for Nvidia JetPack 36.2
+# Installation for Nvidia JetPack 36.3 with kernel 6.8.9
 
 1. Get ready a development environment with Ubuntu 22.04 on your Nvidia Orin.
 
 2. Download the Nvidia L4T Driver Package (BSP) version 36.21:
         
-        wget https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v2.0/release/jetson_linux_r36.2.0_aarch64.tbz2
+       wget https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v3.0/release/jetson_linux_r36.3.0_aarch64.tbz2
 
 3. Extract the Nvidia L4T Driver Package (BSP):
 
-        sudo tar xpf jetson_linux_r36.2.0_aarch64.tbz2
+       tar xpf jetson_linux_r36.3.0_aarch64.tbz2
 
 4. Sync the source code:
 
-        cd Linux_for_Tegra
-        ./source_sync.sh -t jetson_36.2
+       cd Linux_for_Tegra
+       ./source_sync.sh -t jetson_36.6
+       cd kernel
+       git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --branch v6.8.9
+       mv linux kernel-689
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
-        cd source/kernel
-        git clone git@github.com:jpruiz84/bpmp-virt.git
+       cd source/kernel
+       git clone git@github.com:jpruiz84/bpmp-virt.git
 
 6. Create the symbolic links:
 
-        cd ./kernel-jammy-src/drivers/firmware/tegra
-        ln -s ../../../../bpmp-virt/drivers/bpmp-guest-proxy ./bpmp-guest-proxy
-        ln -s ../../../../bpmp-virt/drivers/bpmp-host-proxy ./bpmp-host-proxy
-
+       cd ./kernel-689/drivers/firmware/tegra
+       ln -s ../../../../bpmp-virt/drivers/bpmp-guest-proxy ./bpmp-guest-proxy
+       ln -s ../../../../bpmp-virt/drivers/bpmp-host-proxy ./bpmp-host-proxy
 
 6. Apply the patches from this repo with:
 
-        cd Linux_for_Tegra/sources/kernel/kernel-5.10
+        cd Linux_for_Tegra/sources/kernel/kernel-689
         git apply ../bpmp-virt/*.patch
     
 

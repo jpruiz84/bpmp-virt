@@ -225,7 +225,7 @@ static int bpmp_host_proxy_probe(struct platform_device *pdev)
 	deb_info("registered correctly with major number %d\n", major_number);
 
 	// Register the device class
-	bpmp_host_proxy_class = class_create(THIS_MODULE, CLASS_NAME);
+	bpmp_host_proxy_class = class_create(CLASS_NAME);
 	if (IS_ERR(bpmp_host_proxy_class))
 	{ // Check for error and clean up if there is
 		unregister_chrdev(major_number, DEVICE_NAME);
