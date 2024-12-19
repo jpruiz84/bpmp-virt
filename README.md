@@ -87,7 +87,7 @@ The modifications to the BPMP driver are included in the patch:
     0001-bpmp-support-bpmp-virt.patch
 
 
-# Installation for Nvidia JetPack 36.3 with kernel 6.8.9
+# Installation for Nvidia JetPack 36.3 with kernel 6.12.5
 
 1. Get ready a development environment with Ubuntu 22.04 on your Nvidia Orin.
 
@@ -104,8 +104,8 @@ The modifications to the BPMP driver are included in the patch:
        cd Linux_for_Tegra
        ./source_sync.sh -t jetson_36.6
        cd kernel
-       git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --branch v6.8.9
-       mv linux kernel-689
+       git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git --branch v6.12.5
+       mv linux kernel-612
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
@@ -121,7 +121,7 @@ The modifications to the BPMP driver are included in the patch:
 6. Apply the patches from this repo with:
 
         cd Linux_for_Tegra/sources/kernel/kernel-689
-        git apply ../bpmp-virt/*.patch
+        git apply ../bpmp-virt/patches/*.patch
     
 
 8. Add the kernel configurations:

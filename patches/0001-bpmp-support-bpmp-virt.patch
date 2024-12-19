@@ -1,12 +1,14 @@
-From bccb85ab4d96d3af1e1f50f95567a428d799254d Mon Sep 17 00:00:00 2001
+From 2aa18e7f5d2986818a6d3ba723e1cf0b31c93a3c Mon Sep 17 00:00:00 2001
 From: Juan Pablo Ruiz <juanpablo.ruiz@unikie.com>
-Date: Sun, 12 May 2024 23:02:40 +0300
+Date: Thu, 19 Dec 2024 09:22:05 +0200
 Subject: [PATCH 1/1] bpmp: support bpmp-virt
 
 - Add tegra_bpmp_transfer_redirect callback for the bpmp-guest
 use case.
 - Add bpmp_vpa to store the guest bpmp address from dtb
 - Add Kconfig and Makefile for bpmp-host/guest-virt
+
+Signed-off-by: Juan Pablo Ruiz <juanpablo.ruiz@unikie.com>
 ---
  drivers/firmware/tegra/Kconfig         |  3 ++
  drivers/firmware/tegra/Makefile        |  2 +
@@ -36,7 +38,7 @@ index 620cf3fdd607..ae29c36badcd 100644
 +obj-y	+= bpmp-host-proxy/
 +obj-y	+= bpmp-guest-proxy/
 diff --git a/drivers/firmware/tegra/bpmp-tegra186.c b/drivers/firmware/tegra/bpmp-tegra186.c
-index 6f0d0511b486..7a0d83fbc624 100644
+index 6f0d0511b486..f4a788add002 100644
 --- a/drivers/firmware/tegra/bpmp-tegra186.c
 +++ b/drivers/firmware/tegra/bpmp-tegra186.c
 @@ -33,6 +33,9 @@ struct tegra186_bpmp {
@@ -58,7 +60,7 @@ index 6f0d0511b486..7a0d83fbc624 100644
 +	// then we have to initialize the bpmp-guest
 +	err = of_property_read_u64(bpmp->dev->of_node, "virtual-pa", &bpmp_vpa);
 +	if(!err){
-+		printk("BPMP virtual-pa: 0x%llX", bpmp_vpa);	
++		printk("BPMP virtual-pa: 0x%llX", bpmp_vpa);
 +		return tegra_bpmp_guest_init();
 +	}
 +#endif
@@ -79,10 +81,10 @@ index 6f0d0511b486..7a0d83fbc624 100644
  
  	tegra186_bpmp_teardown_channels(bpmp);
 diff --git a/drivers/firmware/tegra/bpmp.c b/drivers/firmware/tegra/bpmp.c
-index c1590d3aa9cb..19d77f34973d 100644
+index 2bee6e918f81..f5b0d7671448 100644
 --- a/drivers/firmware/tegra/bpmp.c
 +++ b/drivers/firmware/tegra/bpmp.c
-@@ -38,6 +38,19 @@ channel_to_ops(struct tegra_bpmp_channel *channel)
+@@ -33,6 +33,19 @@ channel_to_ops(struct tegra_bpmp_channel *channel)
  	return bpmp->soc->ops;
  }
  
@@ -101,16 +103,16 @@ index c1590d3aa9cb..19d77f34973d 100644
 +
  struct tegra_bpmp *tegra_bpmp_get(struct device *dev)
  {
- 	struct platform_device *pdev;
-@@ -63,6 +76,7 @@ struct tegra_bpmp *tegra_bpmp_get(struct device *dev)
+ 	struct device_node *np __free(device_node);
+@@ -53,6 +66,7 @@ struct tegra_bpmp *tegra_bpmp_get(struct device *dev)
+ 		return ERR_PTR(-EPROBE_DEFER);
+ 	}
  
- put:
- 	of_node_put(np);
 +	tegra_bpmp_host_device = bpmp;
  	return bpmp;
  }
  EXPORT_SYMBOL_GPL(tegra_bpmp_get);
-@@ -339,6 +353,25 @@ int tegra_bpmp_transfer_atomic(struct tegra_bpmp *bpmp,
+@@ -329,6 +343,25 @@ int tegra_bpmp_transfer_atomic(struct tegra_bpmp *bpmp,
  
  	spin_lock(&bpmp->atomic_tx_lock);
  
@@ -136,7 +138,7 @@ index c1590d3aa9cb..19d77f34973d 100644
  	err = tegra_bpmp_channel_write(channel, msg->mrq, MSG_ACK,
  				       msg->tx.data, msg->tx.size);
  	if (err < 0) {
-@@ -382,8 +415,36 @@ int tegra_bpmp_transfer(struct tegra_bpmp *bpmp,
+@@ -372,8 +405,36 @@ int tegra_bpmp_transfer(struct tegra_bpmp *bpmp,
  			return -EAGAIN;
  	}
  
@@ -144,16 +146,16 @@ index c1590d3aa9cb..19d77f34973d 100644
 +	if (tegra_bpmp_transfer_redirect) {
 +		if (tegra_bpmp_outloud && (msg->mrq != 0x4B)){
 +			printk("\n");
-+	        printk("tegra_bpmp_transfer_redirect tx,msg->mrq: 0x%0X tx.size=%ld \n", 
++	        printk("tegra_bpmp_transfer_redirect tx,msg->mrq: 0x%0X tx.size=%ld \n",
 +				msg->mrq, msg->tx.size);
 +	        print_hex_dump(KERN_INFO, "tegra_bpmp_transfer_redirect tx:",
 +				DUMP_PREFIX_NONE, 16, 1, msg->tx.data, msg->tx.size, false);
 +	    }
 +
 +		err = (*tegra_bpmp_transfer_redirect)(bpmp, msg);
-+	
++
 +	    if (tegra_bpmp_outloud && (msg->mrq != 0x4B)){
-+	        printk("tegra_bpmp_transfer_redirect rx: err=%d, msg->rx.ret=%d, msg->rx.size:%ld\n", 
++	        printk("tegra_bpmp_transfer_redirect rx: err=%d, msg->rx.ret=%d, msg->rx.size:%ld\n",
 +				err, msg->rx.ret, msg->rx.size);
 +	        print_hex_dump(KERN_INFO,"tegra_bpmp_transfer_redirect rx:",
 +				DUMP_PREFIX_NONE, 16, 1, msg->rx.data, msg->rx.size, false);
@@ -173,7 +175,7 @@ index c1590d3aa9cb..19d77f34973d 100644
  	if (IS_ERR(channel))
  		return PTR_ERR(channel);
  
-@@ -397,8 +458,15 @@ int tegra_bpmp_transfer(struct tegra_bpmp *bpmp,
+@@ -387,8 +448,15 @@ int tegra_bpmp_transfer(struct tegra_bpmp *bpmp,
  	if (err == 0)
  		return -ETIMEDOUT;
  
