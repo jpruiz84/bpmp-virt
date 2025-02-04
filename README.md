@@ -87,39 +87,37 @@ The modifications to the BPMP driver are included in the patch:
     0001-bpmp-support-bpmp-virt.patch
 
 
-# Installation for Nvidia JetPack 36.2
+# Installation for Nvidia JetPack 36.4.3 with kernel 5.15
 
 1. Get ready a development environment with Ubuntu 22.04 on your Nvidia Orin.
 
 2. Download the Nvidia L4T Driver Package (BSP) version 36.21:
         
-        wget https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v2.0/release/jetson_linux_r36.2.0_aarch64.tbz2
+       wget https://developer.nvidia.com/downloads/embedded/l4t/r36_release_v4.3/release/Jetson_Linux_r36.4.3_aarch64.tbz2
 
 3. Extract the Nvidia L4T Driver Package (BSP):
 
-        sudo tar xpf jetson_linux_r36.2.0_aarch64.tbz2
+       tar xpf Jetson_Linux_r36.4.3_aarch64.tbz2
 
 4. Sync the source code:
 
-        cd Linux_for_Tegra
-        ./source_sync.sh -t jetson_36.2
+       cd Linux_for_Tegra
+       ./source_sync.sh -k jetson_36.4.3
 
 5. Clone this repository to Linux_for_Tegra/sources/kernel
 
-        cd source/kernel
-        git clone git@github.com:jpruiz84/bpmp-virt.git
+       cd source/kernel
+       git clone git@github.com:jpruiz84/bpmp-virt.git
 
 6. Create the symbolic links:
 
-        cd ./kernel-jammy-src/drivers/firmware/tegra
-        ln -s ../../../../bpmp-virt/drivers/bpmp-guest-proxy ./bpmp-guest-proxy
-        ln -s ../../../../bpmp-virt/drivers/bpmp-host-proxy ./bpmp-host-proxy
+       cd ./kernel-jammy-src
+       cp -r ../bpmp-virt/drivers/bpmp-guest-proxy ./drivers/firmware/tegra/
+       cp -r ../bpmp-virt/drivers/bpmp-host-proxy ./drivers/firmware/tegra/
 
+6. Apply the patch to connect the bpmp-virt to the host bpmp:
 
-6. Apply the patches from this repo with:
-
-        cd Linux_for_Tegra/sources/kernel/kernel-5.10
-        git apply ../bpmp-virt/*.patch
+        git apply --whitespace=fix ../bpmp-virt/patches/0001-bpmp-support-bpmp-virt.patch
     
 
 8. Add the kernel configurations:
@@ -128,6 +126,25 @@ The modifications to the BPMP driver are included in the patch:
         CONFIG_TEGRA_BPMP_HOST_PROXY=y
 
 
+**NOTE:** if you want to copy the bpmp-virt modules folder and apply the
+*0001-bpmp-support-bpmp-virt.patch* in a single patch you can use:
+
+        git apply --whitespace=fix ../bpmp-virt/patches/0001-Add-bpmp-virt-kernel-modules-for-kernel-5.15.patch
+
+This single patch is recommended for nix-os usage:
+
+        boot.kernelPatches = [
+                {
+                        extraStructuredConfig = with lib.kernel; {
+                                TEGRA_BPMP_GUEST_PROXY = yes;
+                                TEGRA_BPMP_HOST_PROXY = yes;
+                        };
+                }
+                {
+                        name = "Add bpmp virt kernel modules";
+                        patch = ./patches/0001-Add-bpmp-virt-kernel-modules-for-kernel-5.15.patchh;
+                }
+        ];
 
 ## Device tree
 
